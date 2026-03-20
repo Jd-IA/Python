@@ -1,0 +1,12 @@
+# 1. Ignorar absolutamente todo en el repositorio
+/*
+
+# 2. Permitir el archivo .gitignore (para no perder esta config)
+!.gitignore
+
+# 3. Permitir la carpeta Tarea_2 y TODO su contenido
+!Tarea_2/
+!Tarea_2/**
+
+# 4. EXCEPCIÓN: Ignorar específicamente los pycache dentro de Tarea_2
+Tarea_2/**/__pycache__/
