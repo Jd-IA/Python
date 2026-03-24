@@ -4,6 +4,7 @@ from tkinter import ttk
 from tkinter import font
 from PIL import Image, ImageTk
 from codigos_cadenas import Pixel
+
 ventana = tk.Tk()
 ventana.title("Code Chain")
 mainframe = tk.Frame(ventana)# se crea el frame
@@ -36,7 +37,6 @@ boton_abrir_imagen= tk.Button(mainframe,width=10,height=1, text="Abrir imagen", 
 boton_abrir_imagen.place(relx=0.1,rely=0.48)
 
 
-
 #=============================== Seccion 1 =========================================================
 
 etiqueta_label_contornos = tk.Label(mainframe, text="---------- Detectar contornos ----------", font=fuente_arial)
@@ -54,7 +54,7 @@ etiqueta_label_codigos.place(relx=0.30,rely=0.11)
 boton_F4 = tk.Button(mainframe,width=5,height=2, text="F4",command=pixeles.f4, font=fuente_arial)
 boton_F4.place(relx=0.30,rely=0.14)
 
-boton_F8 = tk.Button(mainframe,width=5,height=2, text="F8",command="", font=fuente_arial)
+boton_F8 = tk.Button(mainframe,width=5,height=2, text="F8",command=pixeles.f8, font=fuente_arial)
 boton_F8.place(relx=0.34,rely=0.14)
 
 boton_AF8 = tk.Button(mainframe,width=5,height=2, text="AF8",command="", font=fuente_arial)
