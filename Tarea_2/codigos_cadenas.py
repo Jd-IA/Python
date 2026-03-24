@@ -112,7 +112,7 @@ class Pixel:
         matriz=self.matriz_binaria
         for i in range(0,self.fila-1):
             for j in range(0,self.columna-1):
-                if [i,j]==1:
+                if matriz[i,j]==1:
                     aux=i
                     aux_2=j
                     if(matriz[aux-1,aux_2]==0 or matriz[aux,aux_2-1]==0 or matriz[aux+1,aux_2]==0 or matriz[aux,aux_2+1]==0):

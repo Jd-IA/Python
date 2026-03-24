@@ -341,4 +341,4 @@ etiqueta_entry_codigo.config(xscrollcommand=scrollbar.set)
 etiqueta_entry_codigo.insert(0, "")
 
 
-mainframe.mainloop()
+ventana.mainloop()
