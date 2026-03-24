@@ -33,7 +33,7 @@ label_2.place(relx=0.02,rely=0.53)
 
 pixeles = Pixel()
 
-boton_abrir_imagen= tk.Button(mainframe,width=10,height=1, text="Abrir imagen", command=pixeles.cargar_imagen, font=fuente_arial)
+boton_abrir_imagen= tk.Button(mainframe,width=10,height=1, text="Abrir imagen", command=lambda: pixeles.cargar_imagen(label), font=fuente_arial)
 boton_abrir_imagen.place(relx=0.1,rely=0.48)
 
 
@@ -51,19 +51,19 @@ boton_N8.place(relx=0.34,rely=0.05)
 etiqueta_label_codigos = tk.Label(mainframe, text="---------- Codigos de cadena ----------", font=fuente_arial)
 etiqueta_label_codigos.place(relx=0.30,rely=0.11)
 
-boton_F4 = tk.Button(mainframe,width=5,height=2, text="F4",command=pixeles.f4, font=fuente_arial)
+boton_F4 = tk.Button(mainframe,width=5,height=2, text="F4",command= lambda: pixeles.f4(etiqueta_entry_codigo), font=fuente_arial)
 boton_F4.place(relx=0.30,rely=0.14)
 
-boton_F8 = tk.Button(mainframe,width=5,height=2, text="F8",command=pixeles.f8, font=fuente_arial)
+boton_F8 = tk.Button(mainframe,width=5,height=2, text="F8",command= lambda: pixeles.f8(etiqueta_entry_codigo), font=fuente_arial)
 boton_F8.place(relx=0.34,rely=0.14)
 
-boton_AF8 = tk.Button(mainframe,width=5,height=2, text="AF8",command=pixeles.af8, font=fuente_arial)
+boton_AF8 = tk.Button(mainframe,width=5,height=2, text="AF8",command= lambda: pixeles.af8(etiqueta_entry_codigo), font=fuente_arial)
 boton_AF8.place(relx=0.38,rely=0.14)
 
-boton_VCC = tk.Button(mainframe,width=5,height=2, text="VCC",command=pixeles.vcc_3, font=fuente_arial)
+boton_VCC = tk.Button(mainframe,width=5,height=2, text="VCC",command= lambda: pixeles.vcc_3(etiqueta_entry_codigo), font=fuente_arial)
 boton_VCC.place(relx=0.42,rely=0.14)
 
-boton_3OT = tk.Button(mainframe,width=5,height=2, text="3OT",command=pixeles._3ot, font=fuente_arial)
+boton_3OT = tk.Button(mainframe,width=5,height=2, text="3OT",command= lambda: pixeles._3ot(etiqueta_entry_codigo), font=fuente_arial)
 boton_3OT.place(relx=0.46,rely=0.14)
 
 etiqueta_label_codigos = tk.Label(mainframe, text="---------- Decodificar ----------", font=fuente_arial)
