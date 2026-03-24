@@ -15,7 +15,9 @@ class Pixel:
         self.matriz_rep_pixeles = 0
         self.codigo_F4 = []
         self.codigo_F8 = []
+        self.codigo_AF8 = []
         self.codigo_VCC3 = []
+        self.codigo_3OT = []
         self.ruta_archivo_og = ""
         self.x_inicio = 0
         self.y_inicio = 0
@@ -95,7 +97,7 @@ class Pixel:
                     if matriz[i, j] == 1:
                         self.x_inicio = i 
                         self.y_inicio = j
-                        print(f"Primer 1 encontrado en x: {self.x_inicio}, y: {self.y_inicio}")
+                        #print(f"Primer 1 encontrado en x: {self.x_inicio}, y: {self.y_inicio}")
                         encontrado = True
                         break  
                 if encontrado:
@@ -170,21 +172,21 @@ class Pixel:
                         matriz_representacion[ni+1, nj+1] = 1   # Vértice v4
             
             self.matriz_rep_pixeles=matriz_representacion
-            print(matriz_representacion)
-            text = ""
-            for i in range(filas_rep):
-                linea = ",".join(str(int(matriz_representacion[i, j])) for j in range(cols_rep))
-                text += linea + "\n"
+            #print(matriz_representacion)
+            #text = ""
+            #for i in range(filas_rep):
+                #linea = ",".join(str(int(matriz_representacion[i, j])) for j in range(cols_rep))
+                #text += linea + "\n"
 
-            carpeta_destino = r"C:\Users\Golde\Documentos\Python\Code-chain"
-            if not os.path.exists(carpeta_destino):
-                os.makedirs(carpeta_destino)
+            #carpeta_destino = r"C:\Users\Golde\Documentos\Python\Code-chain"
+            #if not os.path.exists(carpeta_destino):
+                #os.makedirs(carpeta_destino)
 
-            nombre_archivo = os.path.join(carpeta_destino, "representacion_pixeles.txt")
-            with open(nombre_archivo, "w") as archivo:
-                archivo.write(text)
+            #nombre_archivo = os.path.join(carpeta_destino, "representacion_pixeles.txt")
+            #with open(nombre_archivo, "w") as archivo:
+                #archivo.write(text)
             
-            print(f"Archivo guardado con solapamiento en: '{nombre_archivo}'.")
+            #print(f"Archivo guardado con solapamiento en: '{nombre_archivo}'.")
     def formato_codificado(self, x, y, codigo, alto, ancho):
         texto=f"{alto}x{ancho} {x},{y} {codigo}"
 
@@ -234,7 +236,7 @@ class Pixel:
                 if self.matriz_binaria[i, j] == 1:
                     x = i 
                     y = j
-                    print(f"Primer 1 encontrado en x: {x}, y: {y}")
+                    #print(f"Primer 1 encontrado en x: {x}, y: {y}")
                     encontrado = True
                     break  
             if encontrado:
@@ -247,7 +249,6 @@ class Pixel:
 
         n = 0
     
-
         while (n < self.fila*self.columna):
             # Guardamos x, y actuales para comparar después si hubo movimiento
             if self.matriz_binaria[x, y+1]==1 and ((x,y+1) not in pos_recorridas) and self.verificar_vecidnad_N8(x, y+1, self.matriz_binaria):
@@ -289,16 +290,16 @@ class Pixel:
 
             # Condición de parada: si regresamos al punto inicial
             if x == final_x and y == final_y:
-                print("Contorno cerrado con éxito.")
+                #print("Contorno cerrado con éxito.")
                 break
                 
             n += 1
-
-        print(f"Numero de pasos: {n}")
         n=0
-        print(f"Código F8 Final: {codigo} (Longitud: {len(codigo)})")
+        print(f"Código F4 Final: {codigo} (Longitud: {len(codigo)})")
 
         self.codigo_F4= codigo
+
+        return self.codigo_F4
 
         #print(f"Trayectoria: {pos_recorridas}")
         #print(f"codiog F4: {codigo}")
@@ -334,7 +335,7 @@ class Pixel:
                 if self.matriz_binaria[i, j] == 1:
                     x = i 
                     y = j
-                    print(f"Primer 1 encontrado en x: {x}, y: {y}")
+                    #print(f"Primer 1 encontrado en x: {x}, y: {y}")
                     encontrado = True
                     break  
             if encontrado:
@@ -383,20 +384,40 @@ class Pixel:
             #print(f"{x},{y}")
 
             if x == final_x and y == final_y:
-                print("Contorno cerrado con éxito.")
+                #print("Contorno cerrado con éxito.")
                 break
             n += 1
         
         
-        print(f"Numero de pasos: {n}")
+        #print(f"Numero de pasos: {n}")
         n=0
         print(f"Código F8 Final: {codigo} (Longitud: {len(codigo)})")
 
         self.codigo_F8 = codigo
+
+        return self.codigo_F8
     
-    def af8:
+    def af8(self):
+        #codigo de f8 a af8
+        codigo = self.f8()
+        a_f8=[]
+        aux=0
+        for i in range(len(codigo)-1):
+            aux = (int(codigo[i+1])-int(codigo[i]))%8
+            a_f8.append(aux)
+        aux = (int(codigo[int(len(codigo)-1)])-int(codigo[0]))%8
+
+        a_f8.append(aux)
+
+        self.codigo_AF8=a_f8
+        
+        print(f"Código AF8 Final: {a_f8} (Longitud: {len(a_f8)})")
+
+        return self.codigo_AF8
 
     def vcc_3(self):
+        self.vecindad_N8()
+        self.representar_pixeles()
 
         x, y = 0, 0
         fila = self.matriz_rep_pixeles.shape[0]
@@ -416,10 +437,10 @@ class Pixel:
         codigo = []
 
         caminos_inicio = 0
-        if y+2 < columna and self.matriz_rep_pixeles[x, y+2] == 1 and self.verificar_vecidnad_N8(x, y+2): caminos_inicio += 1
-        if x+2 < fila    and self.matriz_rep_pixeles[x+2, y] == 1 and self.verificar_vecidnad_N8(x+2, y): caminos_inicio += 1
-        if y-2 >= 0      and self.matriz_rep_pixeles[x, y-2] == 1 and self.verificar_vecidnad_N8(x, y-2): caminos_inicio += 1
-        if x-2 >= 0      and self.matriz_rep_pixeles[x-2, y] == 1 and self.verificar_vecidnad_N8(x-2, y): caminos_inicio += 1
+        if y+2 < columna and self.matriz_rep_pixeles[x, y+2] == 1 and self.verificar_vecidnad_N8(x, y+2, self.matriz_rep_pixeles): caminos_inicio += 1
+        if x+2 < fila    and self.matriz_rep_pixeles[x+2, y] == 1 and self.verificar_vecidnad_N8(x+2, y, self.matriz_rep_pixeles): caminos_inicio += 1
+        if y-2 >= 0      and self.matriz_rep_pixeles[x, y-2] == 1 and self.verificar_vecidnad_N8(x, y-2, self.matriz_rep_pixeles): caminos_inicio += 1
+        if x-2 >= 0      and self.matriz_rep_pixeles[x-2, y] == 1 and self.verificar_vecidnad_N8(x-2, y, self.matriz_rep_pixeles): caminos_inicio += 1
         
         codigo.append(max(1, caminos_inicio - 1))
         pos_recorridas.append((x, y))
@@ -429,16 +450,16 @@ class Pixel:
         ancho=self.matriz_rep_pixeles.shape[1]
         while (n < (largo*ancho)):
             movido = False
-            if y+2 < columna and self.matriz_rep_pixeles[x, y+2] == 1 and self.verificar_vecidnad_N8(x, y+2) and ((x, y+2) not in pos_recorridas):
+            if y+2 < columna and self.matriz_rep_pixeles[x, y+2] == 1 and self.verificar_vecidnad_N8(x, y+2, self.matriz_rep_pixeles) and ((x, y+2) not in pos_recorridas):
                 y += 2
                 movido = True
-            elif x+2 < fila and self.matriz_rep_pixeles[x+2, y] == 1 and self.verificar_vecidnad_N8(x+2, y) and ((x+2, y) not in pos_recorridas):
+            elif x+2 < fila and self.matriz_rep_pixeles[x+2, y] == 1 and self.verificar_vecidnad_N8(x+2, y, self.matriz_rep_pixeles) and ((x+2, y) not in pos_recorridas):
                 x += 2
                 movido = True
-            elif y-2 >= 0 and self.matriz_rep_pixeles[x, y-2] == 1 and self.verificar_vecidnad_N8(x, y-2) and ((x, y-2) not in pos_recorridas):
+            elif y-2 >= 0 and self.matriz_rep_pixeles[x, y-2] == 1 and self.verificar_vecidnad_N8(x, y-2, self.matriz_rep_pixeles) and ((x, y-2) not in pos_recorridas):
                 y -= 2
                 movido = True
-            elif x-2 >= 0 and self.matriz_rep_pixeles[x-2, y] == 1 and self.verificar_vecidnad_N8(x-2, y) and ((x-2, y) not in pos_recorridas):
+            elif x-2 >= 0 and self.matriz_rep_pixeles[x-2, y] == 1 and self.verificar_vecidnad_N8(x-2, y, self.matriz_rep_pixeles) and ((x-2, y) not in pos_recorridas):
                 x -= 2
                 movido = True
 
@@ -454,17 +475,17 @@ class Pixel:
                 pos_recorridas.append((x, y))
                 
                 if x == final_x and y == final_y:
-                    print("Contorno cerrado")
+                    #print("Contorno cerrado")
                     break
             else:
                 break
             n += 1
-
-        print(f"Numero de pasos: {n}")
         n=0
-        print(f"Código vcc Final: {codigo} (Longitud: {len(codigo)})")
+        print(f"Código VCC Final: {codigo} (Longitud: {len(codigo)})")
 
         self.codigo_VCC3 = codigo
+
+        return self.codigo_VCC3
 
         #codec = self.formato_codificado(self.x_inicio, self.y_inicio, codigo, self.fila, self.columna)
 
@@ -479,6 +500,47 @@ class Pixel:
 
         #with open(nombre_archivo, "w") as archivo:
         #    archivo.write(codec)
+
+    def _3ot(self):
+        # Obtenemos el código F4
+        codigo = self.f4() 
+        n = len(codigo)
+        c_3ot = []
+        
+        # Manejo circular: CF4(n+1) := CF4(1)
+        codigo_extendido = codigo + [codigo[0]]
+        
+        for i in range(n):
+            actual = int(codigo_extendido[i])
+            siguiente = int(codigo_extendido[i+1])
+            
+            # 1. Si no hay cambio de dirección
+            if siguiente == actual:
+                c_3ot.append(0)
+            else:
+                # 2. Si hay cambio, buscamos la referencia k (último valor diferente a actual)
+                k = None
+                for j in range(i - 1, -1, -1):
+                    if int(codigo[j]) != actual:
+                        k = int(codigo[j])
+                        break
+                
+                # Si no hay previo (inicio de la cadena), usamos el último del arreglo
+                if k is None:
+                    k = int(codigo[-1])
+                
+                # 3. Aplicamos la lógica de la matriz omitiendo el caso "*"
+                if siguiente == k:
+                    c_3ot.append(1)
+                elif siguiente == (k + 2) % 4:
+                    c_3ot.append(2)
+                else:
+                    # Omitimos cualquier otra transición no contemplada
+                    pass
+
+        self.codigo_3OT = c_3ot
+        print(f"Código 3OT Final: {c_3ot} (Longitud: {len(c_3ot)})")
+        return self.codigo_3OT
         
         
 
