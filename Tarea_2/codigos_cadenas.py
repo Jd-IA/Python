@@ -125,19 +125,54 @@ class Pixel:
     def vecindad_N4(self):
         perimetro = 0 
         matriz_perimetro = np.zeros_like(self.matriz_binaria)
-        matriz=self.matriz_binaria
-        for i in range(0,self.fila-1):
-            for j in range(0,self.columna-1):
-                if matriz[i,j]==1:
-                    aux=i
-                    aux_2=j
-                    if(matriz[aux-1,aux_2]==0 or matriz[aux,aux_2-1]==0 or matriz[aux+1,aux_2]==0 or matriz[aux,aux_2+1]==0):
-                        perimetro=perimetro+1
-                        matriz_perimetro[i,j]=1
+        matriz = self.matriz_binaria
         
+        # Recorremos TODA la matriz (desde 0 hasta el final)
+        for i in range(0, self.fila):
+            for j in range(0, self.columna):
+                if matriz[i, j] == 1:
+                    
+                    # --- CASO ESPECIAL: Píxeles en los bordes de la imagen ---
+                    # Si el píxel está en la orilla, es perímetro automáticamente
+                    if (i == 0 or i == self.fila - 1 or 
+                        j == 0 or j == self.columna - 1):
+                        perimetro += 1
+                        matriz_perimetro[i, j] = 1
+                    
+                    # --- TU LÓGICA NORMAL: Píxeles internos ---
+                    # Solo revisamos vecinos si NO estamos en la orilla
+                    else:
+                        if (matriz[i-1, j] == 0 or matriz[i, j-1] == 0 or 
+                            matriz[i+1, j] == 0 or matriz[i, j+1] == 0):
+                            perimetro += 1
+                            matriz_perimetro[i, j] = 1
+        
+        # Guardar y notificar resultados
         print(f"Perimetro N4: {perimetro}")
-
         self.set_matriz_N4(matriz_perimetro, perimetro)
+
+        # --- Bloque de visualización (Ventana Roja) ---
+        alto, ancho = matriz_perimetro.shape
+        img_color = np.zeros((alto, ancho, 3), dtype=np.uint8)
+        img_color[matriz_perimetro == 1] = [255, 0, 0]
+
+        ventana_resaltado = tk.Toplevel()
+        ventana_resaltado.title("Visualización Vecindad N4")
+        ventana_resaltado.config(bg="#38403D")
+
+        imagen_pil = Image.fromarray(img_color)
+        imagen_pil.thumbnail((500, 500), Image.Resampling.LANCZOS)
+        img_tk = ImageTk.PhotoImage(imagen_pil)
+
+        lbl_img = tk.Label(ventana_resaltado, image=img_tk, bg="#38403D")
+        lbl_img.image = img_tk 
+        lbl_img.pack(padx=20, pady=20)
+
+        tk.Label(
+            ventana_resaltado, 
+            text=f"Píxeles en el perímetro N4: {perimetro}",
+            fg="white", bg="#38403D", font=("Arial", 12, "bold")
+        ).pack(pady=10)
 
     def vecindad_N8(self):
         perimetro=0
@@ -162,6 +197,30 @@ class Pixel:
 
         print(f"Perimetro N8: {perimetro}")
         self.set_matriz_N8(matriz_perimetro, perimetro)
+
+        alto, ancho = matriz_perimetro.shape
+        img_color = np.zeros((alto, ancho, 3), dtype=np.uint8)
+
+        img_color[matriz_perimetro == 1] = [255, 0, 0]
+
+        ventana_resaltado_2 = tk.Toplevel()
+        ventana_resaltado_2.title("Vecindad N8")
+        ventana_resaltado_2.config(bg="#38403D")
+
+        imagen_pil_2 = Image.fromarray(img_color)
+        imagen_pil_2.thumbnail((500, 500), Image.Resampling.LANCZOS)
+        
+        img_tk_2 = ImageTk.PhotoImage(imagen_pil_2)
+
+        lbl_img_2 = tk.Label(ventana_resaltado_2, image=img_tk_2, bg="#38403D")
+        lbl_img_2.image = img_tk_2 
+        lbl_img_2.pack(padx=20, pady=20)
+
+        tk.Label(
+            ventana_resaltado_2, 
+            text=f"Píxeles en el perímetro N8: {perimetro}",
+            fg="white", bg="#38403D", font=("Arial", 12, "bold")
+        ).pack(pady=10)
     
     def representar_pixeles(self):
             # Para que se solapen, escalamos por 2 en lugar de 3
@@ -188,58 +247,49 @@ class Pixel:
                         matriz_representacion[ni+1, nj+1] = 1   # Vértice v4
             
             self.matriz_rep_pixeles=matriz_representacion
-            #print(matriz_representacion)
-            #text = ""
-            #for i in range(filas_rep):
-                #linea = ",".join(str(int(matriz_representacion[i, j])) for j in range(cols_rep))
-                #text += linea + "\n"
 
-            #carpeta_destino = r"C:\Users\Golde\Documentos\Python\Code-chain"
-            #if not os.path.exists(carpeta_destino):
-                #os.makedirs(carpeta_destino)
-
-            #nombre_archivo = os.path.join(carpeta_destino, "representacion_pixeles.txt")
-            #with open(nombre_archivo, "w") as archivo:
-                #archivo.write(text)
-            
-            #print(f"Archivo guardado con solapamiento en: '{nombre_archivo}'.")
     def formato_codificado(self, x, y, codigo, alto, ancho):
         texto=f"{alto}x{ancho} {x},{y} {codigo}"
 
         return texto
     
-    def verificar_vecidnad_N8(self,i,j, matriz):
-        vecindad_n8 = False
+    def verificar_vecidnad_N8(self, i, j, matriz):
+        if matriz[i, j] == 0:
+            return False
 
-        if matriz[i, j] == 1:
-            aux = i
-            aux_2 = j
-            if (matriz[aux-1, aux_2] == 0 or   
-                matriz[aux+1, aux_2] == 0 or   
-                matriz[aux, aux_2-1] == 0 or   
-                matriz[aux, aux_2+1] == 0 or   
-                matriz[aux-1, aux_2-1] == 0 or 
-                matriz[aux-1, aux_2+1] == 0 or 
-                matriz[aux+1, aux_2-1] == 0 or 
-                matriz[aux+1, aux_2+1] == 0):  
-                
-                vecindad_n8=True
 
-        return vecindad_n8
+        if (i == 0 or i == self.fila - 1 or 
+            j == 0 or j == self.columna - 1):
+            return True
+
+        if (matriz[i-1, j] == 0 or   
+            matriz[i+1, j] == 0 or   
+            matriz[i, j-1] == 0 or   
+            matriz[i, j+1] == 0 or   
+            matriz[i-1, j-1] == 0 or 
+            matriz[i-1, j+1] == 0 or 
+            matriz[i+1, j-1] == 0 or 
+            matriz[i+1, j+1] == 0):
+            
+            return True
+
+        return False
     def verificar_vecidnad_N4(self, i, j, matriz):
-        vecindad_n4 = False
+        if matriz[i, j] == 0:
+            return False
 
-        if matriz[i, j] == 1:
-            aux = i
-            aux_2 = j
-            if (matriz[aux-1, aux_2] == 0 or 
-                matriz[aux, aux_2-1] == 0 or 
-                matriz[aux+1, aux_2] == 0 or
-                matriz[aux, aux_2+1] == 0): 
-                
-                vecindad_n4 = True
+        if (i == 0 or i == self.fila - 1 or 
+            j == 0 or j == self.columna - 1):
+            return True
 
-        return vecindad_n4
+        if (matriz[i-1, j] == 0 or   # Arriba
+            matriz[i+1, j] == 0 or   # Abajo
+            matriz[i, j-1] == 0 or   # Izquierda
+            matriz[i, j+1] == 0):    # Derecha
+            
+            return True
+
+        return False
     def f4(self, entry):
 
         codigo = []
@@ -250,9 +300,10 @@ class Pixel:
         for i in range(self.fila):
             for j in range(self.columna):
                 if self.matriz_binaria[i, j] == 1:
+                    
                     x = i 
                     y = j
-                    #print(f"Primer 1 encontrado en x: {x}, y: {y}")
+                    print(f"x {x}, y {y}")
                     encontrado = True
                     break  
             if encontrado:
@@ -261,22 +312,24 @@ class Pixel:
         final_y = y
 
         pos_recorridas = []
-        #pos_recorridas.append((x, y))
 
         n = 0
     
-        while (n < self.fila*self.columna):
-            # Guardamos x, y actuales para comparar después si hubo movimiento
-            if self.matriz_binaria[x, y+1]==1 and ((x,y+1) not in pos_recorridas) and self.verificar_vecidnad_N8(x, y+1, self.matriz_binaria):
+        while (n < self.fila * self.columna):
+
+            if y + 1 < self.columna and self.matriz_binaria[x, y+1] == 1 and ((x, y+1) not in pos_recorridas) and self.verificar_vecidnad_N8(x, y+1, self.matriz_binaria):
                 codigo.append(0)
                 y += 1
-            elif self.matriz_binaria[x+1, y] == 1 and ((x+1,y) not in pos_recorridas) and self.verificar_vecidnad_N8(x+1, y, self.matriz_binaria):
+                
+            elif x + 1 < self.fila and self.matriz_binaria[x+1, y] == 1 and ((x+1, y) not in pos_recorridas) and self.verificar_vecidnad_N8(x+1, y, self.matriz_binaria):
                 codigo.append(1) 
                 x += 1
-            elif self.matriz_binaria[x, y-1] == 1 and ((x,y-1) not in pos_recorridas) and self.verificar_vecidnad_N8(x, y-1, self.matriz_binaria):
+
+            elif y - 1 >= 0 and self.matriz_binaria[x, y-1] == 1 and ((x, y-1) not in pos_recorridas) and self.verificar_vecidnad_N8(x, y-1, self.matriz_binaria):
                 codigo.append(2) 
                 y -= 1
-            elif self.matriz_binaria[x-1, y] == 1 and ((x-1,y) not in pos_recorridas) and self.verificar_vecidnad_N8(x-1, y, self.matriz_binaria):
+                
+            elif x - 1 >= 0 and self.matriz_binaria[x-1, y] == 1 and ((x-1, y) not in pos_recorridas) and self.verificar_vecidnad_N8(x-1, y, self.matriz_binaria):
                 codigo.append(3)
                 x -= 1
             else:
@@ -302,11 +355,8 @@ class Pixel:
 
             pos_recorridas.append((x, y))
             
-            #print(f"{x},{y}")
 
-            # Condición de parada: si regresamos al punto inicial
             if x == final_x and y == final_y:
-                #print("Contorno cerrado con éxito.")
                 break
                 
             n += 1
@@ -316,31 +366,11 @@ class Pixel:
 
         self.codigo_F4 = codigo
         entry.delete("0",tk.END)    
+        entry.insert("end","F4 ")
         entry.insert("end",str(codigo))
 
         return self.codigo_F4
 
-        #print(f"Trayectoria: {pos_recorridas}")
-        #print(f"codiog F4: {codigo}")
-        #print(f"Longitud del codigo: {len(codigo)}")
-        #print(f"Perimetro total: {perimetro}") 
-
-
-        #codec=formato_codificado(final_x,final_y,codigo,fila,columna)
-
-        #nombre = os.path.basename(ruta_archivo_og)
-        #carpeta_destino = r"C:\Users\Golde\Documentos\Python\Code-chain"
-        
-        #if not os.path.exists(carpeta_destino):
-        #    os.makedirs(carpeta_destino)
-
-        #nombre_archivo = os.path.join(carpeta_destino, f"codigo_F4_{nombre}")
-
-        #with open(nombre_archivo, "w") as archivo:
-        #    archivo.write(codec)
-        
-        #else:
-        #    print("No se abrio un arhcivo txt")
 
     def f4_2(self): #No usar este, este se usa solamente para 3ot
 
@@ -354,7 +384,6 @@ class Pixel:
                 if self.matriz_binaria[i, j] == 1:
                     x = i 
                     y = j
-                    #print(f"Primer 1 encontrado en x: {x}, y: {y}")
                     encontrado = True
                     break  
             if encontrado:
@@ -363,12 +392,10 @@ class Pixel:
         final_y = y
 
         pos_recorridas = []
-        #pos_recorridas.append((x, y))
 
         n = 0
     
         while (n < self.fila*self.columna):
-            # Guardamos x, y actuales para comparar después si hubo movimiento
             if self.matriz_binaria[x, y+1]==1 and ((x,y+1) not in pos_recorridas) and self.verificar_vecidnad_N8(x, y+1, self.matriz_binaria):
                 codigo.append(0)
                 y += 1
@@ -404,11 +431,8 @@ class Pixel:
 
             pos_recorridas.append((x, y))
             
-            #print(f"{x},{y}")
 
-            # Condición de parada: si regresamos al punto inicial
             if x == final_x and y == final_y:
-                #print("Contorno cerrado con éxito.")
                 break
                 
             n += 1
@@ -426,10 +450,8 @@ class Pixel:
         x, y = 0, 0
         encontrado = False
 
-        # 1. Encontrar el primer píxel del contorno
         for i in range(self.fila):
             for j in range(self.columna):
-                # Debe ser un 1 Y además estar en el borde (tener un vecino 0)
                 if self.matriz_binaria[i, j] == 1 and self.verificar_vecidnad_N8(i, j, self.matriz_binaria):
                     x, y = i, j
                     encontrado = True
@@ -440,21 +462,14 @@ class Pixel:
             return []
 
         inicio_x, inicio_y = x, y
-        pos_recorridas = set() # Eficiencia O(1)
+        pos_recorridas = set() 
         
         n = 0
-        # Límite de seguridad para evitar bucles infinitos
         max_pasos = self.fila * self.columna 
 
         while n < max_pasos:
-            # Guardamos la posición antes de movernos para marcarla como visitada
             pos_actual = (x, y)
-            
-            # Direcciones F8 (0:E, 1:SE, 2:S, 3:SO, 4:O, 5:NO, 6:N, 7:NE)
-            # Nota: He mantenido tu orden de prioridad
-            
-            # Intentar cada dirección
-            # Se verifica: 1. Que sea un 1, 2. Que no hayamos pasado por ahí, 3. Que sea BORDE (tu función N8)
+
             if self.matriz_binaria[x, y+1] == 1 and (x, y+1) not in pos_recorridas and self.verificar_vecidnad_N8(x, y+1, self.matriz_binaria):
                 codigo.append(0); y += 1
             elif self.matriz_binaria[x+1, y+1] == 1 and (x+1, y+1) not in pos_recorridas and self.verificar_vecidnad_N8(x+1, y+1, self.matriz_binaria):
@@ -472,14 +487,11 @@ class Pixel:
             elif self.matriz_binaria[x-1, y+1] == 1 and (x-1, y+1) not in pos_recorridas and self.verificar_vecidnad_N8(x-1, y+1, self.matriz_binaria):
                 codigo.append(7); x -= 1; y += 1
             else:
-                # Si no hay vecinos válidos que no hayamos visitado...
-                # Verificamos si el punto inicial está cerca para cerrar el ciclo
+
                 break
 
-            # Añadimos a visitados
             pos_recorridas.add(pos_actual)
 
-            # Condición de éxito: ¿Volvimos al inicio?
             if x == inicio_x and y == inicio_y:
                 print("¡Contorno cerrado!")
                 break
@@ -491,85 +503,71 @@ class Pixel:
         print(f"Código F8 Final: {codigo} (Longitud: {len(codigo)})")
 
         self.codigo_F8 = codigo
-        entry.delete("0",tk.END)    
+        entry.delete("0",tk.END)  
+        entry.insert("end","F8 ")  
         entry.insert("end",str(codigo))
 
         return self.codigo_F8
 
-    def f8_2(self): #No usar este. solo se usa para af8.
-
+    def f8_2(self):
         codigo = []
-        x = 0
-        y = 0
-        
+        x, y = 0, 0
         encontrado = False
+
+
         for i in range(self.fila):
             for j in range(self.columna):
-                if self.matriz_binaria[i, j] == 1:
-                    x = i 
-                    y = j
-                    #print(f"Primer 1 encontrado en x: {x}, y: {y}")
+                if self.matriz_binaria[i, j] == 1 and self.verificar_vecidnad_N8(i, j, self.matriz_binaria):
+                    x, y = i, j
                     encontrado = True
-                    break  
-            if encontrado:
-                break  
-        final_x = x
-        final_y = y
+                    break
+            if encontrado: break
 
-        pos_recorridas = []
-        #pos_recorridas.append((x, y))
+        if not encontrado:
+            return []
 
+        inicio_x, inicio_y = x, y
+        pos_recorridas = set() 
+        
         n = 0
-        while (n < self.fila*self.columna):
+        max_pasos = self.fila * self.columna 
 
+        while n < max_pasos:
+            pos_actual = (x, y)
             
-            if self.matriz_binaria[x, y+1] == 1 and ((x, y+1) not in pos_recorridas) and self.verificar_vecidnad_N8(x, y+1, self.matriz_binaria):
-                codigo.append(0) 
-                y += 1
-            elif self.matriz_binaria[x+1, y+1] == 1 and ((x+1,y+1) not in pos_recorridas) and self.verificar_vecidnad_N8(x+1, y+1, self.matriz_binaria):
-                codigo.append(1)
-                x += 1
-                y += 1
-            elif self.matriz_binaria[x+1, y] == 1 and ((x+1,y) not in pos_recorridas)and self.verificar_vecidnad_N8(x+1, y, self.matriz_binaria):
-                codigo.append(2)
-                x += 1
-            elif self.matriz_binaria[x+1, y-1] == 1 and ((x+1,y-1) not in pos_recorridas)and self.verificar_vecidnad_N8(x+1, y-1, self.matriz_binaria):
-                codigo.append(3)
-                x += 1
-                y -= 1
-            elif self.matriz_binaria[x, y-1] == 1 and ((x,y-1) not in pos_recorridas)and self.verificar_vecidnad_N8(x, y-1, self.matriz_binaria):
-                codigo.append(4)
-                y -= 1
-            elif self.matriz_binaria[x-1, y-1] == 1 and ((x-1,y-1) not in pos_recorridas)and self.verificar_vecidnad_N8(x-1, y-1, self.matriz_binaria):
-                codigo.append(5)
-                x -= 1
-                y -= 1
-            elif self.matriz_binaria[x-1, y] == 1 and ((x-1,y) not in pos_recorridas)and self.verificar_vecidnad_N8(x-1, y, self.matriz_binaria):
-                codigo.append(6)
-                x -= 1
-            elif self.matriz_binaria[x-1, y+1] == 1 and ((x-1,y+1) not in pos_recorridas)and self.verificar_vecidnad_N8(x-1, y+1, self.matriz_binaria):
-                codigo.append(7)
-                x -= 1
-                y += 1
-
-
-            pos_recorridas.append((x, y))
-            #print(f"{x},{y}")
-
-            if x == final_x and y == final_y:
-                #print("Contorno cerrado con éxito.")
+            if self.matriz_binaria[x, y+1] == 1 and (x, y+1) not in pos_recorridas and self.verificar_vecidnad_N8(x, y+1, self.matriz_binaria):
+                codigo.append(0); y += 1
+            elif self.matriz_binaria[x+1, y+1] == 1 and (x+1, y+1) not in pos_recorridas and self.verificar_vecidnad_N8(x+1, y+1, self.matriz_binaria):
+                codigo.append(1); x += 1; y += 1
+            elif self.matriz_binaria[x+1, y] == 1 and (x+1, y) not in pos_recorridas and self.verificar_vecidnad_N8(x+1, y, self.matriz_binaria):
+                codigo.append(2); x += 1
+            elif self.matriz_binaria[x+1, y-1] == 1 and (x+1, y-1) not in pos_recorridas and self.verificar_vecidnad_N8(x+1, y-1, self.matriz_binaria):
+                codigo.append(3); x += 1; y -= 1
+            elif self.matriz_binaria[x, y-1] == 1 and (x, y-1) not in pos_recorridas and self.verificar_vecidnad_N8(x, y-1, self.matriz_binaria):
+                codigo.append(4); y -= 1
+            elif self.matriz_binaria[x-1, y-1] == 1 and (x-1, y-1) not in pos_recorridas and self.verificar_vecidnad_N8(x-1, y-1, self.matriz_binaria):
+                codigo.append(5); x -= 1; y -= 1
+            elif self.matriz_binaria[x-1, y] == 1 and (x-1, y) not in pos_recorridas and self.verificar_vecidnad_N8(x-1, y, self.matriz_binaria):
+                codigo.append(6); x -= 1
+            elif self.matriz_binaria[x-1, y+1] == 1 and (x-1, y+1) not in pos_recorridas and self.verificar_vecidnad_N8(x-1, y+1, self.matriz_binaria):
+                codigo.append(7); x -= 1; y += 1
+            else:
                 break
-            n += 1
-        
-        
-        #print(f"Numero de pasos: {n}")
-        n=0
 
+            pos_recorridas.add(pos_actual)
+
+            if x == inicio_x and y == inicio_y:
+                print("¡Contorno cerrado!")
+                break
+                
+            n += 1
+
+        print(n)
+        n=0
         self.codigo_F8 = codigo
 
-        return self.codigo_F8 
+        return self.codigo_F8
 
-    
     def af8(self, entry):
         #codigo de f8 a af8
         codigo = self.f8_2()
@@ -586,13 +584,14 @@ class Pixel:
         
         print(f"Código AF8 Final: {a_f8} (Longitud: {len(a_f8)})")
 
-        entry.delete("0",tk.END)    
-        entry.insert("end",str(codigo))
+        entry.delete("0",tk.END) 
+        entry.insert("end","AF8 ")   
+        entry.insert("end",str(a_f8))
 
         return self.codigo_AF8
 
     def vcc_3(self, entry):
-        self.vecindad_N8()
+
         self.representar_pixeles()
 
         x, y = 0, 0
@@ -640,7 +639,6 @@ class Pixel:
                 movido = True
 
             if movido:
-                # Conteo de conectividad: Total - 1
                 caminos_totales = 0
                 if y+2 < columna and self.matriz_rep_pixeles[x, y+2] == 1: caminos_totales += 1
                 if x+2 < fila    and self.matriz_rep_pixeles[x+2, y] == 1: caminos_totales += 1
@@ -651,7 +649,6 @@ class Pixel:
                 pos_recorridas.append((x, y))
                 
                 if x == final_x and y == final_y:
-                    #print("Contorno cerrado")
                     break
             else:
                 break
@@ -662,23 +659,11 @@ class Pixel:
         self.codigo_VCC3 = codigo
 
         entry.delete("0",tk.END)    
+        entry.insert("end","VCC ")
         entry.insert("end",str(codigo))
 
         return self.codigo_VCC3
 
-        #codec = self.formato_codificado(self.x_inicio, self.y_inicio, codigo, self.fila, self.columna)
-
-        #nombre = os.path.basename(self.ruta_archivo_og)
-
-        #carpeta_destino = r"C:\Users\Golde\Documentos\Python\Code-chain"
-        
-        #if not os.path.exists(carpeta_destino):
-        #    os.makedirs(carpeta_destino)
-
-        #nombre_archivo = os.path.join(carpeta_destino, f"codigo_VCC3_{nombre}")
-
-        #with open(nombre_archivo, "w") as archivo:
-        #    archivo.write(codec)
 
     def _3ot(self, entry):
         # Obtenemos el código F4
@@ -720,14 +705,9 @@ class Pixel:
         self.codigo_3OT = c_3ot
         print(f"Código 3OT Final: {c_3ot} (Longitud: {len(c_3ot)})")
 
-        entry.delete("0",tk.END)    
+        entry.delete("0",tk.END)  
+        entry.insert("end","3OT ")  
         entry.insert("end",str(codigo))
         return self.codigo_3OT
         
         
-
-#pixeles = Pixel()
-#pixeles.cargar_imagen()
-#pixeles.vecindad_N8()
-#pixeles.representar_pixeles()
-#pixeles.vcc_3()

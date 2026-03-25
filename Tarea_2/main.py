@@ -42,10 +42,10 @@ boton_abrir_imagen.place(relx=0.1,rely=0.48)
 etiqueta_label_contornos = tk.Label(mainframe, text="---------- Detectar contornos ----------", font=fuente_arial)
 etiqueta_label_contornos.place(relx=0.30,rely=0.02)
 
-boton_N4 = tk.Button(mainframe,width=5,height=2, text="N4",command="", font=fuente_arial)
+boton_N4 = tk.Button(mainframe,width=5,height=2, text="N4",command=pixeles.vecindad_N4, font=fuente_arial)
 boton_N4.place(relx=0.30,rely=0.05)
 
-boton_N8 = tk.Button(mainframe,width=5,height=2, text="N8",command="", font=fuente_arial)
+boton_N8 = tk.Button(mainframe,width=5,height=2, text="N8",command=pixeles.vecindad_N8, font=fuente_arial)
 boton_N8.place(relx=0.34,rely=0.05)
 
 etiqueta_label_codigos = tk.Label(mainframe, text="---------- Codigos de cadena ----------", font=fuente_arial)
