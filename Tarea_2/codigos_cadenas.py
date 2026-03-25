@@ -22,6 +22,7 @@ class Pixel:
         self.ruta_archivo_og = ""
         self.x_inicio = 0
         self.y_inicio = 0
+        self.resultado_huffman = 0
 
     def set_fila(self, fila):
         self.fila = fila
@@ -709,5 +710,14 @@ class Pixel:
         entry.insert("end","3OT ")  
         entry.insert("end",str(codigo))
         return self.codigo_3OT
+    
+    def compresion_huffman(self):
+        self.resultado_huffman
+        lista_nueva=self.fun_aux
+
+    def fun_aux(self):
+
+
+        return lista
         
         
