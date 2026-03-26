@@ -17,14 +17,14 @@ ventana.state('zoomed')
 
 fuente_arial=("Arial", 10)
 
-img_open = Image.open("C:\\Users\\Golde\\Documentos\\Python\\Tarea_2\\imagen_blanco.jpg") 
+img_open = Image.open("C:\\Users\\Mike\\Documents\\python\\Tarea_2\\imagen_blanco.jpg") 
 image = ImageTk.PhotoImage(img_open)
 
 # Mostrar la imagen en un Label
 label = ttk.Label(mainframe, image=image)
 label.place(relx=0.02,rely=0.02)
 
-img_open2 = Image.open("C:\\Users\\Golde\\Documentos\\Python\\Tarea_2\\imagen_blanco.jpg") 
+img_open2 = Image.open("C:\\Users\\Mike\\Documents\\python\\Tarea_2\\imagen_blanco.jpg") 
 image2 = ImageTk.PhotoImage(img_open2)
 
 # Mostrar la imagen en un Label
@@ -42,10 +42,10 @@ boton_abrir_imagen.place(relx=0.1,rely=0.48)
 etiqueta_label_contornos = tk.Label(mainframe, text="---------- Detectar contornos ----------", font=fuente_arial)
 etiqueta_label_contornos.place(relx=0.30,rely=0.02)
 
-boton_N4 = tk.Button(mainframe,width=5,height=2, text="N4",command=pixeles.vecindad_N4, font=fuente_arial)
+boton_N4 = tk.Button(mainframe,width=5,height=2, text="N4",command="", font=fuente_arial)
 boton_N4.place(relx=0.30,rely=0.05)
 
-boton_N8 = tk.Button(mainframe,width=5,height=2, text="N8",command=pixeles.vecindad_N8, font=fuente_arial)
+boton_N8 = tk.Button(mainframe,width=5,height=2, text="N8",command="", font=fuente_arial)
 boton_N8.place(relx=0.34,rely=0.05)
 
 etiqueta_label_codigos = tk.Label(mainframe, text="---------- Codigos de cadena ----------", font=fuente_arial)
@@ -117,7 +117,7 @@ boton_huffman = tk.Button(
     width=11,
     height=1, 
     text="Comprimir",
-    command="", 
+    command=lambda:pixeles.compresion_huffman(etiqueta_calculo_huffman), 
     font=fuente_arial,
     bd=1 
 )

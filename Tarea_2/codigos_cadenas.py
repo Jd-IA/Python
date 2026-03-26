@@ -1,4 +1,6 @@
 import tkinter as tk
+import heapq
+from collections import Counter
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import numpy as np
@@ -711,13 +713,37 @@ class Pixel:
         entry.insert("end",str(codigo))
         return self.codigo_3OT
     
-    def compresion_huffman(self):
-        self.resultado_huffman
-        lista_nueva=self.fun_aux
 
-   # def fun_aux(self):
-
-
-    #    return lista
+    def compresion_huffman(self, etiqueta_interfaz):
+        codigo = self.codigo_F4()
+    
+        # Para calculo de frecuencias y probabilidades
+        n = len(codigo)
+        frecuencias = Counter(codigo)
         
+        # De cada elemento: [frecuencia, [símbolo, "binario"]]
+        heap = [[f, [s, ""]] for s, f in frecuencias.items()]
+        heapq.heapify(heap)
+        
+        # Arbol de Huffman
+        while len(heap) > 1:
+            bajo = heapq.heappop(heap)
+            alto = heapq.heappop(heap)
+            # Asignando 0 a la rama izquierda y 1 a la derecha
+            for par in bajo[1:]:
+                par[1] = '0' + par[1]
+            for par in alto[1:]:
+                par[1] = '1' + par[1]
+            heapq.heappush(heap, [bajo[0] + alto[0]] + bajo[1:] + alto[1:])
+
+        nodos_finales = heapq.heappop(heap)[1:]
+        longitud_promedio = 0
+        
+        for simbolo, bits in nodos_finales:
+            prob_i = frecuencias[simbolo] / n
+            long_bits_i = len(bits)
+            longitud_promedio += prob_i * long_bits_i
+      
+        etiqueta_interfaz.config(text=f"{longitud_promedio:.4f}")
+     
         
