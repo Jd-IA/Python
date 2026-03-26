@@ -71,13 +71,13 @@ boton_VCC.place(relx=0.42,rely=0.14)
 boton_3OT = tk.Button(mainframe,width=5,height=2, text="3OT",command= lambda: pixeles._3ot(etiqueta_entry_codigo), font=fuente_arial)
 boton_3OT.place(relx=0.46,rely=0.14)
 
-etiqueta_label_codigos = tk.Label(mainframe, text="---------- Decodificar ----------", font=fuente_arial)
+etiqueta_label_codigos = tk.Label(mainframe, text="---------- Decodificar ----------", font=fuente_arial)                               
 etiqueta_label_codigos.place(relx=0.30,rely=0.2)
 
 boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Abrir archivo",command=pixeles.decodificar_archivo, font=fuente_arial)
 boton_decodificar.place(relx=0.30,rely=0.23)
 
-boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Decodificar código",command=lambda: pixeles.decodificar_entry(etiqueta_entry_codigo), font=fuente_arial)
+boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Decodificar código",command=lambda: pixeles.decodificar_entry(etiqueta_entry_codigo, label_2), font=fuente_arial)
 boton_decodificar.place(relx=0.39,rely=0.23)
 
 etiqueta_label_histograma = tk.Label(mainframe, text="---------- Histograma ----------", font=fuente_arial)
