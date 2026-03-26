@@ -715,9 +715,9 @@ class Pixel:
         self.resultado_huffman
         lista_nueva=self.fun_aux
 
-    def fun_aux(self):
+   # def fun_aux(self):
 
 
-        return lista
+    #    return lista
         
         
