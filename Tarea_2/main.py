@@ -1,5 +1,6 @@
 
 import tkinter as tk
+import os
 from tkinter import ttk
 from tkinter import font
 from PIL import Image, ImageTk
@@ -17,14 +18,18 @@ ventana.state('zoomed')
 
 fuente_arial=("Arial", 10)
 
-img_open = Image.open("C:\\Users\\Mike\\Documents\\python\\Tarea_2\\imagen_blanco.jpg") 
+directorio_actual = os.path.dirname(__file__)
+
+ruta_relativa = os.path.join(directorio_actual, "imagen_blanco.jpg")
+
+img_open = Image.open(ruta_relativa)
 image = ImageTk.PhotoImage(img_open)
 
-# Mostrar la imagen en un Label
+# Mostrar la imagen en un Label (Tu código original)
 label = ttk.Label(mainframe, image=image)
-label.place(relx=0.02,rely=0.02)
+label.place(relx=0.02, rely=0.02)
 
-img_open2 = Image.open("C:\\Users\\Mike\\Documents\\python\\Tarea_2\\imagen_blanco.jpg") 
+img_open2 = Image.open(ruta_relativa)
 image2 = ImageTk.PhotoImage(img_open2)
 
 # Mostrar la imagen en un Label
@@ -42,10 +47,10 @@ boton_abrir_imagen.place(relx=0.1,rely=0.48)
 etiqueta_label_contornos = tk.Label(mainframe, text="---------- Detectar contornos ----------", font=fuente_arial)
 etiqueta_label_contornos.place(relx=0.30,rely=0.02)
 
-boton_N4 = tk.Button(mainframe,width=5,height=2, text="N4",command="", font=fuente_arial)
+boton_N4 = tk.Button(mainframe,width=5,height=2, text="N4",command=pixeles.vecindad_N4, font=fuente_arial)
 boton_N4.place(relx=0.30,rely=0.05)
 
-boton_N8 = tk.Button(mainframe,width=5,height=2, text="N8",command="", font=fuente_arial)
+boton_N8 = tk.Button(mainframe,width=5,height=2, text="N8",command=pixeles.vecindad_N8, font=fuente_arial)
 boton_N8.place(relx=0.34,rely=0.05)
 
 etiqueta_label_codigos = tk.Label(mainframe, text="---------- Codigos de cadena ----------", font=fuente_arial)
@@ -69,8 +74,11 @@ boton_3OT.place(relx=0.46,rely=0.14)
 etiqueta_label_codigos = tk.Label(mainframe, text="---------- Decodificar ----------", font=fuente_arial)
 etiqueta_label_codigos.place(relx=0.30,rely=0.2)
 
-boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Abrir archivo",command="", font=fuente_arial)
+boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Abrir archivo",command=pixeles.decodificar_archivo, font=fuente_arial)
 boton_decodificar.place(relx=0.30,rely=0.23)
+
+boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Decodificar código",command=lambda: pixeles.decodificar_entry(etiqueta_entry_codigo), font=fuente_arial)
+boton_decodificar.place(relx=0.39,rely=0.23)
 
 etiqueta_label_histograma = tk.Label(mainframe, text="---------- Histograma ----------", font=fuente_arial)
 etiqueta_label_histograma.place(relx=0.30,rely=0.29)
@@ -339,6 +347,10 @@ scrollbar.place(relx=0.40, rely=0.61, relwidth=0.35)
 etiqueta_entry_codigo.config(xscrollcommand=scrollbar.set)
 
 etiqueta_entry_codigo.insert(0, "")
+
+exportar = tk.Button(mainframe,width=7,height=2, text="Exportar",command=lambda: pixeles.formato_codificado(etiqueta_entry_codigo), font=fuente_arial)
+exportar.place(relx=0.30, rely=0.62)
+
 
 
 ventana.mainloop()
