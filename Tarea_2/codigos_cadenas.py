@@ -7,8 +7,6 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
 
-
-
 class Pixel:
     def __init__(self):
         self.fila = 0
@@ -502,6 +500,112 @@ class Pixel:
                 # 6. Actualizar el label
                 label_interfaz.config(image=nueva_img_tk)
                 label_interfaz.image = nueva_img_tk
+            elif tipo=="AF8":
+
+        
+                paso1 = texto_cadena.strip("[]") 
+
+                paso2 = paso1.split(",") 
+
+                cadena = []
+                for i in paso2:
+                    numero = int(i) 
+                    cadena.append(numero)
+
+                filas=self.fila
+                columnas=self.columna
+                x=self.x_inicio
+                y=self.y_inicio
+
+                matriz_perimetro = np.zeros((filas, columnas))
+
+                n=0
+                matriz_perimetro[x, y]=1
+
+                while (n < len(cadena)):
+
+                    if cadena[n] == 0:
+                        matriz_perimetro[x, y+1]=1
+                        y += 1
+
+                    elif cadena[n]==1:
+                        matriz_perimetro[x+1, y+1] = 1 
+                        x += 1;  y+=1
+
+                    elif cadena[n]==2:
+                        matriz_perimetro[x+1, y] = 1 
+                        x += 1
+
+                    elif cadena[n]==3:
+                        matriz_perimetro[x+1, y-1] = 1
+                        x += 1; y -= 1
+
+                    elif cadena[n]==4:
+                        matriz_perimetro[x, y-1] = 1
+                        y -= 1
+
+                    elif cadena[n]==5:
+                        matriz_perimetro[x-1, y-1] = 1 
+                        x -= 1; y -= 1
+
+                    elif cadena[n]==6:
+                        matriz_perimetro[x-1, y] = 1 
+                        x -= 1
+                    elif cadena[n]==7:
+                        matriz_perimetro[x-1, y+1] = 1 
+                        x -= 1; y += 1
+                    else:
+                        print("Termine")
+
+                    n += 1
+                
+                print(matriz_perimetro)
+
+                matriz_horizontal = matriz_perimetro.copy()
+                matriz_vertical = matriz_perimetro.copy()
+
+                for i in range(self.fila):
+                    pos_1, pos_2 = -1, -1
+                    for j in range(self.columna):
+                        if matriz_horizontal[i, j] == 1:
+                            if pos_1 == -1: pos_1 = j
+                            pos_2 = j    
+                    if pos_1 != -1 and pos_2 != -1:
+                        for k in range(pos_1 + 1, pos_2):
+                            matriz_horizontal[i, k] = 1
+
+                for j in range(self.columna): 
+                    pos_1, pos_2 = -1, -1
+                    for i in range(self.fila):
+                        if matriz_vertical[i, j] == 1:
+                            if pos_1 == -1: pos_1 = i
+                            pos_2 = i    
+                    if pos_1 != -1 and pos_2 != -1:
+                        for k in range(pos_1 + 1, pos_2):
+                            matriz_vertical[k, j] = 1 
+
+                matriz_rellena = np.zeros((self.fila, self.columna))
+
+                for i in range(self.fila):
+                    for j in range(self.columna):
+                        if matriz_horizontal[i, j] == 1 and matriz_vertical[i, j] == 1:
+                            matriz_rellena[i, j] = 1
+                        else:
+                            matriz_rellena[i, j] = 0
+
+                print(matriz_rellena)
+
+                img_bw = (matriz_rellena * 255).astype(np.uint8)
+                imagen_pil = Image.fromarray(img_bw, mode='L')
+
+                imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+
+                nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
+
+                # 6. Actualizar el label
+                label_interfaz.config(image=nueva_img_tk)
+                label_interfaz.image = nueva_img_tk
+                
     def vecindad_N8_perimetro(self, matriz_1):
         
         matriz = np.zeros_like(matriz_1)
