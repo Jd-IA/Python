@@ -7,6 +7,8 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
 
+
+
 class Pixel:
     def __init__(self):
         self.fila = 0
@@ -501,112 +503,6 @@ class Pixel:
                 # 6. Actualizar el label
                 label_interfaz.config(image=nueva_img_tk)
                 label_interfaz.image = nueva_img_tk
-            elif tipo=="AF8":
-
-        
-                paso1 = texto_cadena.strip("[]") 
-
-                paso2 = paso1.split(",") 
-
-                cadena = []
-                for i in paso2:
-                    numero = int(i) 
-                    cadena.append(numero)
-
-                filas=self.fila
-                columnas=self.columna
-                x=self.x_inicio
-                y=self.y_inicio
-
-                matriz_perimetro = np.zeros((filas, columnas))
-
-                n=0
-                matriz_perimetro[x, y]=1
-
-                while (n < len(cadena)):
-
-                    if cadena[n] == 0:
-                        matriz_perimetro[x, y+1]=1
-                        y += 1
-
-                    elif cadena[n]==1:
-                        matriz_perimetro[x+1, y+1] = 1 
-                        x += 1;  y+=1
-
-                    elif cadena[n]==2:
-                        matriz_perimetro[x+1, y] = 1 
-                        x += 1
-
-                    elif cadena[n]==3:
-                        matriz_perimetro[x+1, y-1] = 1
-                        x += 1; y -= 1
-
-                    elif cadena[n]==4:
-                        matriz_perimetro[x, y-1] = 1
-                        y -= 1
-
-                    elif cadena[n]==5:
-                        matriz_perimetro[x-1, y-1] = 1 
-                        x -= 1; y -= 1
-
-                    elif cadena[n]==6:
-                        matriz_perimetro[x-1, y] = 1 
-                        x -= 1
-                    elif cadena[n]==7:
-                        matriz_perimetro[x-1, y+1] = 1 
-                        x -= 1; y += 1
-                    else:
-                        print("Termine")
-
-                    n += 1
-                
-                print(matriz_perimetro)
-
-                matriz_horizontal = matriz_perimetro.copy()
-                matriz_vertical = matriz_perimetro.copy()
-
-                for i in range(self.fila):
-                    pos_1, pos_2 = -1, -1
-                    for j in range(self.columna):
-                        if matriz_horizontal[i, j] == 1:
-                            if pos_1 == -1: pos_1 = j
-                            pos_2 = j    
-                    if pos_1 != -1 and pos_2 != -1:
-                        for k in range(pos_1 + 1, pos_2):
-                            matriz_horizontal[i, k] = 1
-
-                for j in range(self.columna): 
-                    pos_1, pos_2 = -1, -1
-                    for i in range(self.fila):
-                        if matriz_vertical[i, j] == 1:
-                            if pos_1 == -1: pos_1 = i
-                            pos_2 = i    
-                    if pos_1 != -1 and pos_2 != -1:
-                        for k in range(pos_1 + 1, pos_2):
-                            matriz_vertical[k, j] = 1 
-
-                matriz_rellena = np.zeros((self.fila, self.columna))
-
-                for i in range(self.fila):
-                    for j in range(self.columna):
-                        if matriz_horizontal[i, j] == 1 and matriz_vertical[i, j] == 1:
-                            matriz_rellena[i, j] = 1
-                        else:
-                            matriz_rellena[i, j] = 0
-
-                print(matriz_rellena)
-
-                img_bw = (matriz_rellena * 255).astype(np.uint8)
-                imagen_pil = Image.fromarray(img_bw, mode='L')
-
-                imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
-
-                nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
-
-                # 6. Actualizar el label
-                label_interfaz.config(image=nueva_img_tk)
-                label_interfaz.image = nueva_img_tk
-                
     def vecindad_N8_perimetro(self, matriz_1):
         
         matriz = np.zeros_like(matriz_1)
@@ -1126,7 +1022,7 @@ class Pixel:
 
         self.codigo_3OT = c_3ot
         self.codigo_seleccionado = c_3ot
-        
+
         print(f"Código 3OT Final: {c_3ot} (Longitud: {len(c_3ot)})")
 
         entry.delete("0",tk.END)  
@@ -1139,7 +1035,7 @@ class Pixel:
         codigo = self.codigo_seleccionado
     
         # Para calculo de frecuencias y probabilidades
-        n = len(codigo)
+        n = len(codigo) 
         frecuencias = Counter(codigo)
         
         # De cada elemento: [frecuencia, [símbolo, "binario"]]
@@ -1159,12 +1055,16 @@ class Pixel:
 
         nodos_finales = heapq.heappop(heap)[1:]
         longitud_promedio = 0
+        total_bits_acumulados = 0
         
         for simbolo, bits in nodos_finales:
-            prob_i = frecuencias[simbolo] / n
-            long_bits_i = len(bits)
-            longitud_promedio += prob_i * long_bits_i
-      
+            #prob_i = frecuencias[simbolo] / n
+            #long_bits_i = len(bits)
+            #longitud_promedio += prob_i * long_bits_i
+            cuenta = frecuencias[simbolo]
+            bits_simbolo = cuenta * len(bits)
+            total_bits_acumulados += bits_simbolo
+        longitud_promedio = total_bits_acumulados / n
         etiqueta_interfaz.config(text=f"{longitud_promedio:.4f}")
      
         
