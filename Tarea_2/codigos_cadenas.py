@@ -620,6 +620,7 @@ class Pixel:
         n=0
         self.codigo_F4 = codigo
         self.codigo_seleccionado = codigo 
+
         # Actualizar la interfaz (Tkinter)
         entry.delete("0", "end")
         entry.insert("end", "F4 - ")
@@ -798,6 +799,7 @@ class Pixel:
         # Actualizar interfaz
         self.codigo_F8 = codigo
         self.codigo_seleccionado = codigo
+
         entry.delete("0", tk.END)  
         entry.insert("end", f"F8 - {codigo}")
 
@@ -893,6 +895,7 @@ class Pixel:
         a_f8.append(aux)
 
         self.codigo_AF8=a_f8
+        self.codigo_seleccionado = a_f8
         
         print(f"Código AF8 Final: {a_f8} (Longitud: {len(a_f8)})")
 
@@ -1019,6 +1022,7 @@ class Pixel:
 
         self.codigo_3OT = c_3ot
         self.codigo_seleccionado = c_3ot
+        
         print(f"Código 3OT Final: {c_3ot} (Longitud: {len(c_3ot)})")
 
         entry.delete("0",tk.END)  
