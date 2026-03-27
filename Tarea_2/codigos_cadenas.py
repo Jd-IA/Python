@@ -9,6 +9,8 @@ from PIL import Image, ImageTk
 from scipy.ndimage import binary_fill_holes
 
 
+
+
 class Pixel:
     def __init__(self):
         self.fila = 0
@@ -1153,6 +1155,8 @@ class Pixel:
                     pass
 
         self.codigo_3OT = c_3ot
+        self.codigo_seleccionado = c_3ot
+
         print(f"Código 3OT Final: {c_3ot} (Longitud: {len(c_3ot)})")
 
         entry.delete("0",tk.END)  
@@ -1165,7 +1169,7 @@ class Pixel:
         codigo = self.codigo_F4()
     
         # Para calculo de frecuencias y probabilidades
-        n = len(codigo)
+        n = len(codigo) 
         frecuencias = Counter(codigo)
         
         # De cada elemento: [frecuencia, [símbolo, "binario"]]
@@ -1185,12 +1189,16 @@ class Pixel:
 
         nodos_finales = heapq.heappop(heap)[1:]
         longitud_promedio = 0
+        total_bits_acumulados = 0
         
         for simbolo, bits in nodos_finales:
-            prob_i = frecuencias[simbolo] / n
-            long_bits_i = len(bits)
-            longitud_promedio += prob_i * long_bits_i
-      
+            #prob_i = frecuencias[simbolo] / n
+            #long_bits_i = len(bits)
+            #longitud_promedio += prob_i * long_bits_i
+            cuenta = frecuencias[simbolo]
+            bits_simbolo = cuenta * len(bits)
+            total_bits_acumulados += bits_simbolo
+        longitud_promedio = total_bits_acumulados / n
         etiqueta_interfaz.config(text=f"{longitud_promedio:.4f}")
      
         
