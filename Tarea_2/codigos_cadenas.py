@@ -6,6 +6,8 @@ from collections import Counter
 from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
+from scipy.ndimage import binary_fill_holes
+
 
 class Pixel:
     def __init__(self):
@@ -17,6 +19,8 @@ class Pixel:
         self.matriz_N8 = 0
         self.perimetro_N8 = 0
         self.matriz_rep_pixeles = 0
+        self.x_rp=""
+        self.y_rp=""
         self.codigo_F4 = []
         self.codigo_F8 = []
         self.codigo_AF8 = []
@@ -26,7 +30,6 @@ class Pixel:
         self.x_inicio = 0
         self.y_inicio = 0
         self.resultado_huffman = 0
-        self.codigo_seleccionado = []
 
     def set_fila(self, fila):
         self.fila = fila
@@ -234,6 +237,26 @@ class Pixel:
         self.matriz_rep_pixeles=matriz_representacion
 
 
+    def recuperar_tamaño_original(self, matriz_escalada):
+        # matriz_escalada es la 'matriz_rellena' de tamaño (2M+1, 2N+1)
+        filas_rep, cols_rep = matriz_escalada.shape
+        
+        # Operación inversa: n = (n_rep - 1) // 2
+        original_filas = (filas_rep - 1) // 2
+        original_cols = (cols_rep - 1) // 2
+        
+        matriz_original = np.zeros((original_filas, original_cols), dtype=np.uint8)
+        
+        for i in range(original_filas):
+            for j in range(original_cols):
+                # Saltamos a los centros (1, 3, 5...)
+                ni = i * 2 + 1
+                nj = j * 2 + 1
+                matriz_original[i, j] = int(matriz_escalada[ni, nj])
+                
+        return matriz_original
+
+
     def verificar_vecidnad_N8(self, i, j, matriz):
         if matriz[i, j] == 0:
             return False
@@ -308,6 +331,21 @@ class Pixel:
             texto_cadena=codigo[1]
 
             if tipo=="F4":
+
+                self.representar_pixeles()
+                filas = self.matriz_rep_pixeles.shape[0]
+                columnas = self.matriz_rep_pixeles.shape[1]
+                encontrado = False
+                for i in range(filas):
+                    for j in range(columnas):
+                        if self.matriz_rep_pixeles[i, j] == 1:
+                            x = i 
+                            y = j
+                            encontrado = True
+                            break  
+                    if encontrado:
+                        break  
+
                 paso1 = texto_cadena.strip("[]") 
 
                 paso2 = paso1.split(",") 
@@ -317,10 +355,7 @@ class Pixel:
                     numero = int(i) 
                     cadena.append(numero)
 
-                filas=self.fila
-                columnas=self.columna
-                x=self.x_inicio
-                y=self.y_inicio
+                
 
                 matriz_perimetro = np.zeros((filas, columnas))
 
@@ -331,61 +366,36 @@ class Pixel:
 
                     if cadena[n] == 0:
                         matriz_perimetro[x, y+1]=1
-                        y += 1
+                        matriz_perimetro[x, y+2]=1
+                        y += 2
 
                     elif cadena[n]==1:
                         matriz_perimetro[x+1, y] = 1 
-                        x += 1
+                        matriz_perimetro[x+2, y] = 1 
+                        x += 2
 
                     elif cadena[n]==2:
                         matriz_perimetro[x, y-1] = 1 
-                        y -= 1
+                        matriz_perimetro[x, y-2] = 1 
+                        y -= 2
 
                     elif cadena[n]==3:
                         matriz_perimetro[x-1, y] = 1
-                        x -= 1; 
+                        matriz_perimetro[x-2, y] = 1
+                        x -= 2 
                     else:
                         print("Termine")
 
                     n += 1
                 
                 print(matriz_perimetro)
+        
+                matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+                # 4. AHORA SÍ: Volver al tamaño original
+                matriz_og = self.recuperar_tamaño_original(matriz_rellena)
 
-                matriz_horizontal = matriz_perimetro.copy()
-                matriz_vertical = matriz_perimetro.copy()
-
-                for i in range(self.fila):
-                    pos_1, pos_2 = -1, -1
-                    for j in range(self.columna):
-                        if matriz_horizontal[i, j] == 1:
-                            if pos_1 == -1: pos_1 = j
-                            pos_2 = j    
-                    if pos_1 != -1 and pos_2 != -1:
-                        for k in range(pos_1 + 1, pos_2):
-                            matriz_horizontal[i, k] = 1
-
-                for j in range(self.columna): 
-                    pos_1, pos_2 = -1, -1
-                    for i in range(self.fila):
-                        if matriz_vertical[i, j] == 1:
-                            if pos_1 == -1: pos_1 = i
-                            pos_2 = i    
-                    if pos_1 != -1 and pos_2 != -1:
-                        for k in range(pos_1 + 1, pos_2):
-                            matriz_vertical[k, j] = 1 
-
-                matriz_rellena = np.zeros((self.fila, self.columna))
-
-                for i in range(self.fila):
-                    for j in range(self.columna):
-                        if matriz_horizontal[i, j] == 1 and matriz_vertical[i, j] == 1:
-                            matriz_rellena[i, j] = 1
-                        else:
-                            matriz_rellena[i, j] = 0
-
-                print(matriz_rellena)
-
-                img_bw = (matriz_rellena * 255).astype(np.uint8)
+                # 5. Mostrar (matriz_og ya tiene el tamaño M x N)
+                img_bw = (matriz_og * 255).astype(np.uint8)
                 imagen_pil = Image.fromarray(img_bw, mode='L')
 
                 imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
@@ -457,37 +467,31 @@ class Pixel:
                 
                 print(matriz_perimetro)
 
-                matriz_horizontal = matriz_perimetro.copy()
-                matriz_vertical = matriz_perimetro.copy()
+                #matriz_horizontal = matriz_perimetro.copy()
+                #matriz_vertical = matriz_perimetro.copy()
 
-                for i in range(self.fila):
-                    pos_1, pos_2 = -1, -1
-                    for j in range(self.columna):
-                        if matriz_horizontal[i, j] == 1:
-                            if pos_1 == -1: pos_1 = j
-                            pos_2 = j    
-                    if pos_1 != -1 and pos_2 != -1:
-                        for k in range(pos_1 + 1, pos_2):
-                            matriz_horizontal[i, k] = 1
+                #for i in range(self.fila):
+                 #   pos_1, pos_2 = -1, -1
+                 #   for j in range(self.columna):
+                 #       if matriz_horizontal[i, j] == 1:
+                 #           if pos_1 == -1: pos_1 = j
+                 #           pos_2 = j    
+                 #   if pos_1 != -1 and pos_2 != -1:
+                 #       for k in range(pos_1 + 1, pos_2):
+                 #           matriz_horizontal[i, k] = 1
 
-                for j in range(self.columna): 
-                    pos_1, pos_2 = -1, -1
-                    for i in range(self.fila):
-                        if matriz_vertical[i, j] == 1:
-                            if pos_1 == -1: pos_1 = i
-                            pos_2 = i    
-                    if pos_1 != -1 and pos_2 != -1:
-                        for k in range(pos_1 + 1, pos_2):
-                            matriz_vertical[k, j] = 1 
+                #for j in range(self.columna): 
+                 #   pos_1, pos_2 = -1, -1
+                 #   for i in range(self.fila):
+                 #       if matriz_vertical[i, j] == 1:
+                 #           if pos_1 == -1: pos_1 = i
+                 #           pos_2 = i    
+                 #   if pos_1 != -1 and pos_2 != -1:
+                 #       for k in range(pos_1 + 1, pos_2):
+                 #           matriz_vertical[k, j] = 1 
 
-                matriz_rellena = np.zeros((self.fila, self.columna))
-
-                for i in range(self.fila):
-                    for j in range(self.columna):
-                        if matriz_horizontal[i, j] == 1 and matriz_vertical[i, j] == 1:
-                            matriz_rellena[i, j] = 1
-                        else:
-                            matriz_rellena[i, j] = 0
+                #matriz_rellena = np.zeros((self.fila, self.columna))
+                matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
 
                 print(matriz_rellena)
 
@@ -501,111 +505,123 @@ class Pixel:
                 # 6. Actualizar el label
                 label_interfaz.config(image=nueva_img_tk)
                 label_interfaz.image = nueva_img_tk
-            elif tipo=="AF8":
 
-        
+            elif tipo == "AF8":
+            
+                # 1. Procesar la cadena de texto
                 paso1 = texto_cadena.strip("[]") 
-
                 paso2 = paso1.split(",") 
+                cadena = [int(i) for i in paso2]
 
-                cadena = []
-                for i in paso2:
-                    numero = int(i) 
-                    cadena.append(numero)
+                # 2. Inicializar dimensiones y punto de partida
+                filas, columnas = self.fila, self.columna
+                x, y = self.x_inicio, self.y_inicio
+                
+                matriz_perimetro = np.zeros((filas, columnas))
+                matriz_perimetro[x, y] = 1 # Pintar punto de inicio
 
-                filas=self.fila
-                columnas=self.columna
-                x=self.x_inicio
-                y=self.y_inicio
+                # La dirección inicial es RELATIVA a 0 para el primer movimiento
+                dir_actual = 0 
+
+                # 3. Reconstruir el perímetro
+                for i in range(len(cadena)):
+                    # El primer número nos da la dirección inicial absoluta
+                    # Los siguientes se suman para obtener el nuevo rumbo
+                    dir_actual = (dir_actual + cadena[i]) % 8
+                    
+                    if dir_actual == 0:   y += 1             # Este
+                    elif dir_actual == 1: x += 1; y += 1      # Sureste
+                    elif dir_actual == 2: x += 1             # Sur
+                    elif dir_actual == 3: x += 1; y -= 1      # Suroeste
+                    elif dir_actual == 4: y -= 1             # Oeste
+                    elif dir_actual == 5: x -= 1; y -= 1      # Noroeste
+                    elif dir_actual == 6: x -= 1             # Norte
+                    elif dir_actual == 7: x -= 1; y += 1      # Noreste
+                    
+                    # Verificación de límites
+                    if 0 <= x < filas and 0 <= y < columnas:
+                        matriz_perimetro[x, y] = 1
+
+
+                matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+
+                # 5. Mostrar imagen corregida
+                img_bw = (matriz_rellena * 255).astype(np.uint8)
+                imagen_pil = Image.fromarray(img_bw, mode='L')
+                imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+                
+                nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
+                label_interfaz.config(image=nueva_img_tk)
+                label_interfaz.image = nueva_img_tk
+
+            elif tipo == "VCC":
+                from scipy.ndimage import binary_fill_holes
+                
+                self.representar_pixeles()
+                filas, columnas = self.matriz_rep_pixeles.shape
+                
+                # Buscar inicio dinámico
+                x, y = 0, 0
+                encontrado = False
+                for i in range(filas):
+                    for j in range(columnas):
+                        if self.matriz_rep_pixeles[i, j] == 1:
+                            x, y = i, j
+                            encontrado = True
+                            break
+                    if encontrado:
+                        break
+
+                # Procesar cadena
+                limpio = texto_cadena.strip("[]")
+                cadena = [int(i.strip()) for i in limpio.split(",") if i.strip()]
 
                 matriz_perimetro = np.zeros((filas, columnas))
 
-                n=0
-                matriz_perimetro[x, y]=1
-
-                while (n < len(cadena)):
-
-                    if cadena[n] == 0:
-                        matriz_perimetro[x, y+1]=1
-                        y += 1
-
-                    elif cadena[n]==1:
-                        matriz_perimetro[x+1, y+1] = 1 
-                        x += 1;  y+=1
-
-                    elif cadena[n]==2:
-                        matriz_perimetro[x+1, y] = 1 
-                        x += 1
-
-                    elif cadena[n]==3:
-                        matriz_perimetro[x+1, y-1] = 1
-                        x += 1; y -= 1
-
-                    elif cadena[n]==4:
-                        matriz_perimetro[x, y-1] = 1
-                        y -= 1
-
-                    elif cadena[n]==5:
-                        matriz_perimetro[x-1, y-1] = 1 
-                        x -= 1; y -= 1
-
-                    elif cadena[n]==6:
-                        matriz_perimetro[x-1, y] = 1 
-                        x -= 1
-                    elif cadena[n]==7:
-                        matriz_perimetro[x-1, y+1] = 1 
-                        x -= 1; y += 1
-                    else:
-                        print("Termine")
-
-                    n += 1
+                # Dirección inicial (derecha)
+                dx, dy = 0, 2
                 
-                print(matriz_perimetro)
+                matriz_perimetro[x, y] = 1
+                n=0
+                for giro in cadena:
+                    print(giro)
 
-                matriz_horizontal = matriz_perimetro.copy()
-                matriz_vertical = matriz_perimetro.copy()
 
-                for i in range(self.fila):
-                    pos_1, pos_2 = -1, -1
-                    for j in range(self.columna):
-                        if matriz_horizontal[i, j] == 1:
-                            if pos_1 == -1: pos_1 = j
-                            pos_2 = j    
-                    if pos_1 != -1 and pos_2 != -1:
-                        for k in range(pos_1 + 1, pos_2):
-                            matriz_horizontal[i, k] = 1
+                    if giro == 0:
+                        pass  # recto
+                    elif giro == 1:  # derecha
+                        dx, dy = dy, -dx
+                    elif giro == 2:  # izquierda
+                        dx, dy = -dy, dx
 
-                for j in range(self.columna): 
-                    pos_1, pos_2 = -1, -1
-                    for i in range(self.fila):
-                        if matriz_vertical[i, j] == 1:
-                            if pos_1 == -1: pos_1 = i
-                            pos_2 = i    
-                    if pos_1 != -1 and pos_2 != -1:
-                        for k in range(pos_1 + 1, pos_2):
-                            matriz_vertical[k, j] = 1 
+                    # Punto intermedio (evitar huecos)
+                    mid_x = x + dx // 2
+                    mid_y = y + dy // 2
 
-                matriz_rellena = np.zeros((self.fila, self.columna))
+                    x += dx
+                    y += dy
 
-                for i in range(self.fila):
-                    for j in range(self.columna):
-                        if matriz_horizontal[i, j] == 1 and matriz_vertical[i, j] == 1:
-                            matriz_rellena[i, j] = 1
-                        else:
-                            matriz_rellena[i, j] = 0
+                    if 0 <= x < filas and 0 <= y < columnas:
+                        matriz_perimetro[mid_x, mid_y] = 1
+                        matriz_perimetro[x, y] = 1
+                    else:
+                        break
+                    print(matriz_perimetro)
+                    n=n+1
 
-                print(matriz_rellena)
+                # Rellenar figura
+                matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+                
+                matriz_og = self.recuperar_tamaño_original(matriz_rellena)
 
-                img_bw = (matriz_rellena * 255).astype(np.uint8)
+                img_bw = (matriz_og * 255).astype(np.uint8)
                 imagen_pil = Image.fromarray(img_bw, mode='L')
-
                 imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
 
                 nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
-
-                # 6. Actualizar el label
                 label_interfaz.config(image=nueva_img_tk)
                 label_interfaz.image = nueva_img_tk
+
                 
     def vecindad_N8_perimetro(self, matriz_1):
         
@@ -631,6 +647,7 @@ class Pixel:
         return matriz
     
     def f4(self, entry):
+
                 
         encontrado = False
         for i in range(self.fila):
@@ -643,6 +660,10 @@ class Pixel:
                     break  
             if encontrado:
                 break  
+
+
+
+
 
         self.representar_pixeles()
 
@@ -723,8 +744,7 @@ class Pixel:
         print(f"Código F4 Final: {codigo} (Longitud: {len(codigo)})")
         n=0
         self.codigo_F4 = codigo
-        self.codigo_seleccionado = codigo 
-
+        
         # Actualizar la interfaz (Tkinter)
         entry.delete("0", "end")
         entry.insert("end", "F4 - ")
@@ -902,8 +922,6 @@ class Pixel:
 
         # Actualizar interfaz
         self.codigo_F8 = codigo
-        self.codigo_seleccionado = codigo
-
         entry.delete("0", tk.END)  
         entry.insert("end", f"F8 - {codigo}")
 
@@ -980,26 +998,29 @@ class Pixel:
                 break
                 
             n += 1
+        print(f"Código F8 Final: {codigo} (Longitud: {len(codigo)})")
         n=0
 
+        # Actualizar interfaz
+        self.codigo_F8 = codigo
 
 
         return self.codigo_F8
 
     def af8(self, entry):
-        #codigo de f8 a af8
-        codigo = self.f8_2()
-        a_f8=[]
-        aux=0
-        for i in range(len(codigo)-1):
-            aux = (int(codigo[i+1])-int(codigo[i]))%8
+        codigo = self.f8_2() # Obtiene F8 absoluto
+        if not codigo: return []
+        
+        # El primer elemento es la dirección absoluta inicial
+        a_f8 = [int(codigo[0])] 
+        
+        # Los demás son los diferenciales (giros)
+        for i in range(len(codigo) - 1):
+            aux = (int(codigo[i+1]) - int(codigo[i])) % 8
             a_f8.append(aux)
-        aux = (int(codigo[int(len(codigo)-1)])-int(codigo[0]))%8
-
-        a_f8.append(aux)
-
-        self.codigo_AF8=a_f8
-        self.codigo_seleccionado = a_f8
+            
+        self.codigo_AF8 = a_f8
+        # ... (resto de tu print y entry)
         
         print(f"Código AF8 Final: {a_f8} (Longitud: {len(a_f8)})")
 
@@ -1010,83 +1031,90 @@ class Pixel:
         return self.codigo_AF8
 
     def vcc_3(self, entry):
-
         self.representar_pixeles()
+        filas, columnas = self.matriz_rep_pixeles.shape
 
-        x, y = 0, 0
-        fila = self.matriz_rep_pixeles.shape[0]
-        columna = self.matriz_rep_pixeles.shape[1]
+        # 🔍 Buscar primer pixel (inicio)
         encontrado = False
-
-        for i in range(fila):
-            for j in range(columna):
+        for i in range(filas):
+            for j in range(columnas):
                 if self.matriz_rep_pixeles[i, j] == 1:
                     x, y = i, j
                     encontrado = True
-                    self.x_inicio=x
-                    self.y_inicio=y
                     break
-            if encontrado: break
+            if encontrado:
+                break
 
-        final_x, final_y = x, y
-        pos_recorridas = []
+        start_x, start_y = x, y
+
+        pos_recorridas = [(x, y)]
         codigo = []
 
-        caminos_inicio = 0
-        if y+2 < columna and self.matriz_rep_pixeles[x, y+2] == 1 and self.verificar_vecidnad_N8(x, y+2, self.matriz_rep_pixeles): caminos_inicio += 1
-        if x+2 < fila    and self.matriz_rep_pixeles[x+2, y] == 1 and self.verificar_vecidnad_N8(x+2, y, self.matriz_rep_pixeles): caminos_inicio += 1
-        if y-2 >= 0      and self.matriz_rep_pixeles[x, y-2] == 1 and self.verificar_vecidnad_N8(x, y-2, self.matriz_rep_pixeles): caminos_inicio += 1
-        if x-2 >= 0      and self.matriz_rep_pixeles[x-2, y] == 1 and self.verificar_vecidnad_N8(x-2, y, self.matriz_rep_pixeles): caminos_inicio += 1
-        
-        codigo.append(max(1, caminos_inicio - 1))
-        pos_recorridas.append((x, y))
+        # 👉 Dirección inicial (derecha en escala 2)
+        dir_anterior = (0, 2)
 
+        max_iter = filas * columnas
         n = 0
-        largo=self.matriz_rep_pixeles.shape[0]
-        ancho=self.matriz_rep_pixeles.shape[1]
-        while (n < (largo*ancho)):
+
+        while n < max_iter:
             movido = False
-            if y+2 < columna and self.matriz_rep_pixeles[x, y+2] == 1 and self.verificar_vecidnad_N8(x, y+2, self.matriz_rep_pixeles) and ((x, y+2) not in pos_recorridas):
-                y += 2
-                movido = True
-            elif x+2 < fila and self.matriz_rep_pixeles[x+2, y] == 1 and self.verificar_vecidnad_N8(x+2, y, self.matriz_rep_pixeles) and ((x+2, y) not in pos_recorridas):
-                x += 2
-                movido = True
-            elif y-2 >= 0 and self.matriz_rep_pixeles[x, y-2] == 1 and self.verificar_vecidnad_N8(x, y-2, self.matriz_rep_pixeles) and ((x, y-2) not in pos_recorridas):
-                y -= 2
-                movido = True
-            elif x-2 >= 0 and self.matriz_rep_pixeles[x-2, y] == 1 and self.verificar_vecidnad_N8(x-2, y, self.matriz_rep_pixeles) and ((x-2, y) not in pos_recorridas):
-                x -= 2
-                movido = True
 
-            if movido:
-                caminos_totales = 0
-                if y+2 < columna and self.matriz_rep_pixeles[x, y+2] == 1: caminos_totales += 1
-                if x+2 < fila    and self.matriz_rep_pixeles[x+2, y] == 1: caminos_totales += 1
-                if y-2 >= 0      and self.matriz_rep_pixeles[x, y-2] == 1: caminos_totales += 1
-                if x-2 >= 0      and self.matriz_rep_pixeles[x-2, y] == 1: caminos_totales += 1
-                
-                codigo.append(caminos_totales - 1)
-                pos_recorridas.append((x, y))
-                
-                if x == final_x and y == final_y:
+            dx, dy = dir_anterior
+
+            # 🔥 IMPORTANTE: NO pisar dx, dy
+            opciones = [
+                (-dy, dx),   # izquierda primero
+                (dx, dy),    # recto
+                (dy, -dx)    # derecha
+            ]
+            for ndx, ndy in opciones:
+
+                nx, ny = x + ndx, y + ndy
+
+                if (0 <= nx < filas and 0 <= ny < columnas and
+                    self.matriz_rep_pixeles[nx, ny] == 1 and
+                    ((nx, ny) not in pos_recorridas or (nx, ny) == (start_x, start_y))):
+
+                    # 🧠 Calcular giro correctamente
+                    x1, y1 = dir_anterior
+                    x2, y2 = ndx, ndy
+
+                    giro_val = x1 * y2 - y1 * x2
+
+                    if giro_val == 0:
+                        codigo.append(0)  # recto
+                    elif giro_val < 0:
+                        codigo.append(1)  # derecha
+                    else:
+                        codigo.append(2)  # izquierda
+
+                    # 🚶 mover
+                    x += ndx
+                    y += ndy
+
+                    dir_anterior = (ndx, ndy)
+                    pos_recorridas.append((x, y))
+
+                    # 🔁 cierre de ciclo
+                    if (x, y) == (start_x, start_y):
+                        movido = True
+                        break
+
+                    movido = True
                     break
-            else:
+
+            if not movido:
                 break
+
             n += 1
-        n=0
-        print(f"Código VCC Final: {codigo} (Longitud: {len(codigo)})")
 
+        # 🧾 guardar resultado
         self.codigo_VCC3 = codigo
-        self.codigo_seleccionado = codigo
+        entry.delete("0", "end")
+        entry.insert("end", f"VCC - {codigo}")
 
-        entry.delete("0",tk.END)    
-        entry.insert("end","VCC - ")
-        entry.insert("end",str(codigo))
-
-        return self.codigo_VCC3
-
-
+        return codigo
+    
     def _3ot(self, entry):
         # Obtenemos el código F4
         codigo = self.f4_2() 
@@ -1125,8 +1153,6 @@ class Pixel:
                     pass
 
         self.codigo_3OT = c_3ot
-        self.codigo_seleccionado = c_3ot
-        
         print(f"Código 3OT Final: {c_3ot} (Longitud: {len(c_3ot)})")
 
         entry.delete("0",tk.END)  
@@ -1136,7 +1162,7 @@ class Pixel:
     
 
     def compresion_huffman(self, etiqueta_interfaz):
-        codigo = self.codigo_seleccionado
+        codigo = self.codigo_F4()
     
         # Para calculo de frecuencias y probabilidades
         n = len(codigo)
