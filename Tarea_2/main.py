@@ -125,7 +125,7 @@ boton_huffman = tk.Button(
     width=11,
     height=1, 
     text="Comprimir",
-    command=lambda:pixeles.compresion_huffman(etiqueta_calculo_huffman), 
+    command=lambda:pixeles.compresion_huffman(etiqueta_calculo_huffman, etiqueta_entry_codigo), 
     font=fuente_arial,
     bd=1 
 )

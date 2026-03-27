@@ -1165,22 +1165,32 @@ class Pixel:
         return self.codigo_3OT
     
 
-    def compresion_huffman(self, etiqueta_interfaz):
-        codigo = self.codigo_F4()
+    def compresion_huffman(self, etiqueta_interfaz, entry):
+        codigo=(str(entry.get()).split(" - "))
+        tipo=codigo[0]
+        texto_cadena=codigo[1]
+
+        paso1 = texto_cadena.strip("[]") 
+
+        paso2 = paso1.split(",") 
+
+        codigo = []
+        for i in paso2:
+            numero = int(i) 
+            codigo.append(numero)
     
-        # Para calculo de frecuencias y probabilidades
         n = len(codigo) 
         frecuencias = Counter(codigo)
         
-        # De cada elemento: [frecuencia, [símbolo, "binario"]]
+        # [frecuencia, [simbolo, "binario"]]
         heap = [[f, [s, ""]] for s, f in frecuencias.items()]
         heapq.heapify(heap)
         
-        # Arbol de Huffman
+        # Huffman
         while len(heap) > 1:
             bajo = heapq.heappop(heap)
             alto = heapq.heappop(heap)
-            # Asignando 0 a la rama izquierda y 1 a la derecha
+            # 0 a la rama izquierda y 1 a la derecha
             for par in bajo[1:]:
                 par[1] = '0' + par[1]
             for par in alto[1:]:
@@ -1199,6 +1209,8 @@ class Pixel:
             bits_simbolo = cuenta * len(bits)
             total_bits_acumulados += bits_simbolo
         longitud_promedio = total_bits_acumulados / n
+        print(total_bits_acumulados)
+        print(n)
         etiqueta_interfaz.config(text=f"{longitud_promedio:.4f}")
      
         
