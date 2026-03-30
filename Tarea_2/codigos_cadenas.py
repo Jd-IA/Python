@@ -8,9 +8,6 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 from scipy.ndimage import binary_fill_holes
 
-
-
-
 class Pixel:
     def __init__(self):
         self.fila = 0

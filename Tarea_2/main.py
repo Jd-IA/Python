@@ -131,6 +131,7 @@ boton_huffman = tk.Button(
 )
 boton_huffman.place(relx=0.53,rely=0.05)
 
+
 etiqueta_calculo_huffman = tk.Label(
     mainframe, 
     text="0.0000",                  
@@ -173,34 +174,6 @@ etiqueta_calculo_aritmetica = tk.Label(
     bd=2               
 ) 
 etiqueta_calculo_aritmetica.place(relx=0.6,rely=0.14)
-
-etiqueta_label_paq= tk.Label(mainframe, text="---------- Compresión de PAQL8 ----------", font=fuente_arial)
-etiqueta_label_paq.place(relx=0.53,rely=0.2)
-
-boton_paq = tk.Button(
-    mainframe,
-    width=11,
-    height=1, 
-    text="Comprimir",
-    command="", 
-    font=fuente_arial,
-    bd=1 
-)
-boton_paq.place(relx=0.53,rely=0.23)
-
-etiqueta_calculo_paq= tk.Label(
-    mainframe, 
-    text="0.0000",                  
-    font=("Arial",12,"bold"), 
-    bg="white", 
-    fg="black",        
-    width=13, 
-    height=1,          
-    anchor="center",   
-    relief="sunken",   
-    bd=2               
-)
-etiqueta_calculo_paq.place(relx=0.6,rely=0.23)
 
 #=============================== Seccion 3 =========================================================
 etiqueta_label_propiedades = tk.Label(mainframe, text="---------- Propiedades Geometricas ----------", font=fuente_arial)
@@ -256,15 +229,15 @@ etiqueta_calculo_area= tk.Label(
 )
 etiqueta_calculo_area.place(relx=0.82,rely=0.15)
 
-etiqueta_label_contorno = tk.Label(
+etiqueta_label_perimetro_contacto = tk.Label(
     mainframe, 
-    text="Contorno:", 
+    text="P. Contacto:", 
     height=1, 
     font=("Arial",12) 
 )
-etiqueta_label_contorno.place(relx=0.76, rely=0.19)
+etiqueta_label_perimetro_contacto.place(relx=0.76, rely=0.19)
 
-etiqueta_calculo_contorno= tk.Label(
+etiqueta_calculo_perimetro_contacto= tk.Label(
     mainframe, 
     text="0.0000",                  
     font=("Arial",12,"bold"), 
@@ -276,7 +249,7 @@ etiqueta_calculo_contorno= tk.Label(
     relief="sunken",   
     bd=2               
 )
-etiqueta_calculo_contorno.place(relx=0.82,rely=0.19)
+etiqueta_calculo_perimetro_contacto.place(relx=0.82,rely=0.19)
 
 etiqueta_label_euler = tk.Label(
     mainframe, 
