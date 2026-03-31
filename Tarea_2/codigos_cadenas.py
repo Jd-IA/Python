@@ -58,7 +58,6 @@ class Pixel:
         self.perimetro_N8 = perimetro
 
     def cargar_imagen(self, label):
-        # guardar nombre imagen en self.nombre_imagen
         ruta_imagen_og = filedialog.askopenfilename(
             filetypes=[("Archivos de imagen", "*.png *.jpg *.jpeg *.bmp *.tiff *.gif")]
         )
@@ -369,7 +368,21 @@ class Pixel:
         with open(ruta, "r") as archivo:
             linea = archivo.read().strip()
 
-        partes       = linea.split(" ", 3)
+        if not linea:
+            messagebox.showwarning("Aviso", "El archivo está vacío.")
+            return
+
+        tipos_validos = ["F4", "F8", "AF8", "VCC", "3OT"]
+        partes = linea.split(" ", 3)
+        if (len(partes) < 4 or
+            partes[0] not in tipos_validos or
+            "x" not in partes[1] or
+            "," not in partes[2] or
+            not partes[3].startswith("[") or
+            not partes[3].strip().endswith("]")):
+            messagebox.showwarning("Aviso", "Formato inválido.\nDebe ser: TIPO FILASxCOLUMNAS X,Y [codigo]")
+            return
+
         tipo         = partes[0]
         dims         = partes[1].split("x")
         inicio       = partes[2].split(",")
@@ -391,12 +404,17 @@ class Pixel:
 
 
     def decodificar_entry(self, entry, label):
-    
+        
         if entry.get() == "":
             messagebox.showwarning("Aviso", "Código de cadena vacío.")
             return
 
         if " - " not in entry.get():
+            messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
+            return
+
+        partes = entry.get().split(" - ")
+        if len(partes) < 2 or not partes[0].strip() or not partes[1].strip().startswith("[") or not partes[1].strip().endswith("]"):
             messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
             return
 
