@@ -91,7 +91,7 @@ boton_entropia = tk.Button(
     width=16,
     height=1, 
     text="Calcular entropia",
-    command="", 
+    command=lambda:pixeles.entropia_shannon(etiqueta_entry_codigo, etiqueta_calculo_entropia), 
     font=fuente_arial,
     bd=1 
 )
@@ -122,7 +122,7 @@ boton_huffman = tk.Button(
     width=11,
     height=1, 
     text="Comprimir",
-    command=lambda:pixeles.compresion_huffman(etiqueta_calculo_huffman, etiqueta_entry_codigo), 
+    command=lambda:pixeles.compresion_huffman(etiqueta_entry_codigo, etiqueta_calculo_huffman), 
     font=fuente_arial,
     bd=1 
 )
@@ -151,7 +151,7 @@ boton_aritmetica = tk.Button(
     width=11,
     height=1, 
     text="Comprimir",
-    command="", 
+    command=lambda:pixeles.comp_aritmetica(etiqueta_entry_codigo, etiqueta_calculo_aritmetica), 
     font=fuente_arial,
     bd=1 
 )

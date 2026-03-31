@@ -1462,3 +1462,28 @@ class Pixel:
             label_com_discreta.config(text=f"{com_discreta:.4f}")
         else:
             messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+
+    def entropia_shannon(self,entry,label_h):
+        texto_cadena=entry.get().split(" - ")[1]
+        codigo=[int(i.strip()) for i in texto_cadena.strip("[]").split(",") if i.strip()]
+
+        datos=self.tabla(codigo)
+        entropia= -(datos['Probabilidad']*np.log2(datos['Probabilidad'])).sum()
+        
+        label_h.config(text=f"{entropia:.4f}")
+        return entropia
+
+    def comp_aritmetica(self, entry, label_a):
+        texto_cadena=entry.get().split(" - ")[1]
+        codigo=[int(i.strip()) for i in texto_cadena.strip("[]").split(",") if i.strip()]
+        
+        datos=self.tabla(codigo)
+        probs=dict(zip(datos['Simbolo'], datos['Probabilidad']))
+        
+        suma_logs=sum(-math.log2(probs[s]) for s in codigo)
+        total_bits=math.ceil(suma_logs)
+        
+        longitud_promedio=total_bits/len(codigo)
+        
+        label_a.config(text=f"{longitud_promedio:.4f}")
+        return longitud_promedio
