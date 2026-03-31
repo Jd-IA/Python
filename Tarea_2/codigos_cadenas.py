@@ -185,7 +185,7 @@ class Pixel:
                 fg="white", bg="#38403D", font=("Arial", 12, "bold")
             ).pack(pady=10)
         else:
-            messagebox.showinfo("Aviso", "No se ha cargado una imagen.")
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
         
 
     def vecindad_N8(self):
@@ -238,7 +238,7 @@ class Pixel:
                 fg="white", bg="#38403D", font=("Arial", 12, "bold")
             ).pack(pady=10)
         else:
-            messagebox.showinfo("Aviso", "No se ha cargado una imagen.")
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
     def representar_pixeles(self):
 
         filas_rep = self.fila * 2 + 1
@@ -1462,4 +1462,4 @@ class Pixel:
             label_euler.config(text=f"{caracteristica_euler:.4f}")
             label_com_discreta.config(text=f"{com_discreta:.4f}")
         else:
-            messagebox.showinfo("Aviso", "No se ha cargado una imagen.")
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
