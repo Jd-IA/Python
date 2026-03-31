@@ -326,7 +326,6 @@ class Pixel:
             messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
             return
 
-        
         codigo = (str(entry.get()).split(" - "))
         tipo   = codigo[0]
 
@@ -334,13 +333,13 @@ class Pixel:
             texto = (f"{tipo} {self.fila}x{self.columna} "
                     f"{self.x_inicio},{self.y_inicio} "
                     f"{codigo[1]} "
-                    f"{self.codigo_F4_2[0]}")   
+                    f"{self.codigo_F4_2[0]}")
         else:
             texto = f"{tipo} {self.fila}x{self.columna} {self.x_inicio},{self.y_inicio} {codigo[1]}"
 
-        nombre = f"codigo {self.nombre_imagen} {tipo}"
+        nombre = f"codigo {self.nombre_imagen} {tipo}.txt"  # <- .txt aquí
         carpeta_destino = os.path.dirname(__file__)
-        
+
         if not os.path.exists(carpeta_destino):
             os.makedirs(carpeta_destino)
 
@@ -348,7 +347,7 @@ class Pixel:
 
         with open(nombre_archivo, "w") as archivo:
             archivo.write(texto)
-        
+
         messagebox.showinfo("Exportar", f"Archivo generado correctamente \n {nombre}")
 
     def decodificar_archivo(self, entry):

@@ -15,7 +15,6 @@ mainframe.config(width="1800", height="795")#alto y ancho de Frame
 
 ventana.state('zoomed')
 
-
 fuente_arial=("Arial", 10)
 
 directorio_actual = os.path.dirname(__file__)
@@ -25,14 +24,12 @@ ruta_relativa = os.path.join(directorio_actual, "imagen_blanco.jpg")
 img_open = Image.open(ruta_relativa)
 image = ImageTk.PhotoImage(img_open)
 
-# Mostrar la imagen en un Label (Tu código original)
 label = ttk.Label(mainframe, image=image)
 label.place(relx=0.02, rely=0.02)
 
 img_open2 = Image.open(ruta_relativa)
 image2 = ImageTk.PhotoImage(img_open2)
 
-# Mostrar la imagen en un Label
 label_2 = ttk.Label(mainframe, image=image2)
 label_2.place(relx=0.02,rely=0.53)
 
@@ -327,8 +324,6 @@ etiqueta_entry_codigo.insert(0, "")
 
 exportar = tk.Button(mainframe,width=7,height=2, text="Exportar",command=lambda: pixeles.formato_codificado(etiqueta_entry_codigo), font=fuente_arial)
 exportar.place(relx=0.30, rely=0.62)
-
-
 
 try:
     ventana.mainloop()
