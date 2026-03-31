@@ -74,7 +74,7 @@ boton_3OT.place(relx=0.46,rely=0.14)
 etiqueta_label_codigos = tk.Label(mainframe, text="---------- Decodificar ----------", font=fuente_arial)                               
 etiqueta_label_codigos.place(relx=0.30,rely=0.2)
 
-boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Abrir archivo",command=pixeles.decodificar_archivo, font=fuente_arial)
+boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Abrir archivo",command=lambda: pixeles.decodificar_archivo(etiqueta_entry_codigo), font=fuente_arial)
 boton_decodificar.place(relx=0.30,rely=0.23)
 
 boton_decodificar = tk.Button(mainframe,width=14,height=1, text="Decodificar código",command=lambda: pixeles.decodificar_entry(etiqueta_entry_codigo, label_2), font=fuente_arial)
@@ -83,7 +83,7 @@ boton_decodificar.place(relx=0.39,rely=0.23)
 etiqueta_label_histograma = tk.Label(mainframe, text="---------- Histograma ----------", font=fuente_arial)
 etiqueta_label_histograma.place(relx=0.30,rely=0.29)
 
-boton_histograma= tk.Button(mainframe,width=16,height=1, text="Generar histograma",command="", font=fuente_arial)
+boton_histograma= tk.Button(mainframe,width=16,height=1, text="Generar histograma",command=lambda: pixeles.histograma(etiqueta_entry_codigo), font=fuente_arial)
 boton_histograma.place(relx=0.30,rely=0.321)
 
 etiqueta_label_entropia = tk.Label(mainframe, text="---------- Entropia de Shannon ----------", font=fuente_arial)
@@ -179,7 +179,11 @@ etiqueta_calculo_aritmetica.place(relx=0.6,rely=0.14)
 etiqueta_label_propiedades = tk.Label(mainframe, text="---------- Propiedades Geometricas ----------", font=fuente_arial)
 etiqueta_label_propiedades.place(relx=0.76,rely=0.02)
 
-boton_calcular_propiedades = tk.Button(mainframe,width=10,height=1, text="Calcular",command="", font=fuente_arial)
+boton_calcular_propiedades = tk.Button(mainframe,width=10,height=1, text="Calcular",command=lambda: pixeles.propiedades_geometricas(etiqueta_calculo_perimetro, 
+                                                                                                                                    etiqueta_calculo_area, 
+                                                                                                                                    etiqueta_calculo_perimetro_contacto, 
+                                                                                                                                    etiqueta_calculo_euler, 
+                                                                                                                                    etiqueta_calculo_discreta), font=fuente_arial)
 boton_calcular_propiedades.place(relx=0.76,rely=0.05)
 
 etiqueta_label_perimetro = tk.Label(
@@ -326,4 +330,7 @@ exportar.place(relx=0.30, rely=0.62)
 
 
 
-ventana.mainloop()
+try:
+    ventana.mainloop()
+except KeyboardInterrupt:
+    pass

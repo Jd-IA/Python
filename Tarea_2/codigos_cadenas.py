@@ -1,3 +1,4 @@
+import math
 import tkinter as tk
 import heapq
 import os
@@ -7,20 +8,29 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from scipy.ndimage import binary_fill_holes
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 
 class Pixel:
     def __init__(self):
         self.fila = 0
         self.columna = 0
-        self.matriz_binaria = 0
-        self.matriz_N4 = 0
+        self.matriz_binaria = []
+        self.nombre_imagen = ""
+        self.matriz_N4 = []
         self.perimetro_N4 = 0
-        self.matriz_N8 = 0
+        self.ventana_N4 = None
+        self.matriz_N8 = []
         self.perimetro_N8 = 0
-        self.matriz_rep_pixeles = 0
+        self.ventana_N8 = None
+        self.matriz_rep_pixeles = []
         self.x_rp=""
         self.y_rp=""
         self.codigo_F4 = []
+        self.codigo_F4_2 = []
         self.codigo_F8 = []
         self.codigo_AF8 = []
         self.codigo_VCC3 = []
@@ -47,38 +57,51 @@ class Pixel:
         self.matriz_N8 = matriz
         self.perimetro_N8 = perimetro
 
-    def cargar_imagen(self, label_interfaz):
-        ruta_imagen_og = filedialog.askopenfilename()
+    def cargar_imagen(self, label):
+        # guardar nombre imagen en self.nombre_imagen
+        ruta_imagen_og = filedialog.askopenfilename(
+            filetypes=[("Archivos de imagen", "*.png *.jpg *.jpeg *.bmp *.tiff *.gif")]
+        )
 
-        if ruta_imagen_og:
+        if not ruta_imagen_og:
+            messagebox.showwarning("Aviso", "No se seleccionó ningún archivo.")
+            return
 
-            imagen_og = Image.open(ruta_imagen_og).convert("RGB")
-            img_og_array = np.array(imagen_og)
+        extensiones_validas = (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".gif")
+        if not ruta_imagen_og.lower().endswith(extensiones_validas):
+            messagebox.showwarning("Aviso", "El archivo seleccionado no es una imagen válida.")
+            return
 
-            fila_real = img_og_array.shape[0]
-            columna_real = img_og_array.shape[1]
-            self.set_fila(fila_real)
-            self.set_columna(columna_real)
+        imagen_og = Image.open(ruta_imagen_og).convert("RGB")
+        img_og_array = np.array(imagen_og)
 
-            print(f"Datos originales guardados: {fila_real}x{columna_real}")
+        self.nombre_imagen = os.path.splitext(os.path.basename(ruta_imagen_og))[0]
 
-            matriz = np.zeros((fila_real, columna_real))
-            for i in range(fila_real):
-                for j in range(columna_real):
-                    if (img_og_array[i, j, 0] != 0):
-                        matriz[i, j] = 1
-            
-            self.set_matriz_binaria(matriz)
-            print("Matriz binaria generada con éxito.")
-                        
-            imagen_display = imagen_og.copy()
-            imagen_display.thumbnail((350, 350), Image.Resampling.LANCZOS)
-            
-            nueva_img_tk = ImageTk.PhotoImage(imagen_display)
-            label_interfaz.config(image=nueva_img_tk)
-            label_interfaz.image = nueva_img_tk 
-            
-            print("Imagen actualizada en la interfaz y datos cargados.")
+        fila_real = img_og_array.shape[0]
+        columna_real = img_og_array.shape[1]
+        self.set_fila(fila_real)
+        self.set_columna(columna_real)
+
+        print(f"Datos originales guardados: {fila_real}x{columna_real}")
+
+        matriz = np.zeros((fila_real, columna_real))
+        for i in range(fila_real):
+            for j in range(columna_real):
+                if (img_og_array[i, j, 0] != 0):
+                    matriz[i, j] = 1
+        
+        self.set_matriz_binaria(matriz)
+        print("Matriz binaria generada con éxito.")
+                    
+        imagen_display = imagen_og.copy()
+        imagen_display.thumbnail((350, 350), Image.Resampling.LANCZOS)
+        
+        nueva_img_tk = ImageTk.PhotoImage(imagen_display)
+        label.config(image=nueva_img_tk)
+        label.image = nueva_img_tk 
+        
+        print("Imagen actualizada en la interfaz y datos cargados.")
+
 
     def cargar_matriz(self):
 
@@ -116,102 +139,109 @@ class Pixel:
             print("No se abrio un arhcivo txt")
         
     def vecindad_N4(self):
-        perimetro = 0 
-        matriz_perimetro = np.zeros_like(self.matriz_binaria)
-        matriz = self.matriz_binaria
-        
-        for i in range(0, self.fila):
-            for j in range(0, self.columna):
-                if matriz[i, j] == 1:
-                    
+        if self.ventana_N4 is not None and self.ventana_N4.winfo_exists():
+            self.ventana_N4.lift() 
+            return
+        if len(self.matriz_binaria) != 0:
 
-                    if (i == 0 or i == self.fila - 1 or 
-                        j == 0 or j == self.columna - 1):
-                        perimetro += 1
-                        matriz_perimetro[i, j] = 1
-                
-                    else:
-                        if (matriz[i-1, j] == 0 or matriz[i, j-1] == 0 or 
-                            matriz[i+1, j] == 0 or matriz[i, j+1] == 0):
+            perimetro = 0 
+            matriz_perimetro = np.zeros_like(self.matriz_binaria)
+            matriz = self.matriz_binaria
+            
+            for i in range(0, self.fila):
+                for j in range(0, self.columna):
+                    if matriz[i, j] == 1:
+                        if (i == 0 or i == self.fila - 1 or 
+                            j == 0 or j == self.columna - 1):
                             perimetro += 1
                             matriz_perimetro[i, j] = 1
+                        else:
+                            if (matriz[i-1, j] == 0 or matriz[i, j-1] == 0 or 
+                                matriz[i+1, j] == 0 or matriz[i, j+1] == 0):
+                                perimetro += 1
+                                matriz_perimetro[i, j] = 1
+            
+            print(f"Perimetro N4: {perimetro}")
+            self.set_matriz_N4(matriz_perimetro, perimetro)
+
+            alto, ancho = matriz_perimetro.shape
+            img_color = np.zeros((alto, ancho, 3), dtype=np.uint8)
+            img_color[matriz_perimetro == 1] = [255, 0, 0]
+
+            self.ventana_N4 = tk.Toplevel()
+            self.ventana_N4.title("Visualización Vecindad N4")
+            self.ventana_N4.config(bg="#38403D")
+
+            imagen_pil = Image.fromarray(img_color)
+            imagen_pil.thumbnail((500, 500), Image.Resampling.LANCZOS)
+            img_tk = ImageTk.PhotoImage(imagen_pil)
+
+            lbl_img = tk.Label(self.ventana_N4, image=img_tk, bg="#38403D")
+            lbl_img.image = img_tk 
+            lbl_img.pack(padx=20, pady=20)
+
+            tk.Label(
+                self.ventana_N4, 
+                text=f"Píxeles en el perímetro N4: {perimetro}",
+                fg="white", bg="#38403D", font=("Arial", 12, "bold")
+            ).pack(pady=10)
+        else:
+            messagebox.showinfo("Aviso", "No se ha cargado una imagen.")
         
-        print(f"Perimetro N4: {perimetro}")
-        self.set_matriz_N4(matriz_perimetro, perimetro)
-
-        alto, ancho = matriz_perimetro.shape
-        img_color = np.zeros((alto, ancho, 3), dtype=np.uint8)
-        img_color[matriz_perimetro == 1] = [255, 0, 0]
-
-        ventana_resaltado = tk.Toplevel()
-        ventana_resaltado.title("Visualización Vecindad N4")
-        ventana_resaltado.config(bg="#38403D")
-
-        imagen_pil = Image.fromarray(img_color)
-        imagen_pil.thumbnail((500, 500), Image.Resampling.LANCZOS)
-        img_tk = ImageTk.PhotoImage(imagen_pil)
-
-        lbl_img = tk.Label(ventana_resaltado, image=img_tk, bg="#38403D")
-        lbl_img.image = img_tk 
-        lbl_img.pack(padx=20, pady=20)
-
-        tk.Label(
-            ventana_resaltado, 
-            text=f"Píxeles en el perímetro N4: {perimetro}",
-            fg="white", bg="#38403D", font=("Arial", 12, "bold")
-        ).pack(pady=10)
 
     def vecindad_N8(self):
-        perimetro=0
-        matriz_perimetro = np.zeros_like(self.matriz_binaria)
-        matriz=self.matriz_binaria
-        for i in range(1, self.fila - 1):
-            for j in range(1, self.columna - 1):
-                if matriz[i, j] == 1:
-                    aux = i
-                    aux_2 = j
-                    if (matriz[aux-1, aux_2] == 0 or   
-                        matriz[aux+1, aux_2] == 0 or   
-                        matriz[aux, aux_2-1] == 0 or   
-                        matriz[aux, aux_2+1] == 0 or   
-                        matriz[aux-1, aux_2-1] == 0 or 
-                        matriz[aux-1, aux_2+1] == 0 or 
-                        matriz[aux+1, aux_2-1] == 0 or 
-                        matriz[aux+1, aux_2+1] == 0):  
-                        
-                        perimetro = perimetro + 1
-                        matriz_perimetro[i, j] = 1
+        if self.ventana_N8 is not None and self.ventana_N8.winfo_exists():
+            self.ventana_N8.lift()
+            return
+        if len(self.matriz_binaria) != 0:
+            perimetro = 0
+            matriz_perimetro = np.zeros_like(self.matriz_binaria)
+            matriz = self.matriz_binaria
+            for i in range(1, self.fila - 1):
+                for j in range(1, self.columna - 1):
+                    if matriz[i, j] == 1:
+                        aux = i
+                        aux_2 = j
+                        if (matriz[aux-1, aux_2] == 0 or   
+                            matriz[aux+1, aux_2] == 0 or   
+                            matriz[aux, aux_2-1] == 0 or   
+                            matriz[aux, aux_2+1] == 0 or   
+                            matriz[aux-1, aux_2-1] == 0 or 
+                            matriz[aux-1, aux_2+1] == 0 or 
+                            matriz[aux+1, aux_2-1] == 0 or 
+                            matriz[aux+1, aux_2+1] == 0):  
+                            
+                            perimetro += 1
+                            matriz_perimetro[i, j] = 1
 
-        print(f"Perimetro N8: {perimetro}")
-        self.set_matriz_N8(matriz_perimetro, perimetro)
+            print(f"Perimetro N8: {perimetro}")
+            self.set_matriz_N8(matriz_perimetro, perimetro)
 
-        alto, ancho = matriz_perimetro.shape
-        img_color = np.zeros((alto, ancho, 3), dtype=np.uint8)
+            alto, ancho = matriz_perimetro.shape
+            img_color = np.zeros((alto, ancho, 3), dtype=np.uint8)
+            img_color[matriz_perimetro == 1] = [255, 0, 0]
 
-        img_color[matriz_perimetro == 1] = [255, 0, 0]
+            self.ventana_N8 = tk.Toplevel()
+            self.ventana_N8.title("Vecindad N8")
+            self.ventana_N8.config(bg="#38403D")
 
-        ventana_resaltado_2 = tk.Toplevel()
-        ventana_resaltado_2.title("Vecindad N8")
-        ventana_resaltado_2.config(bg="#38403D")
+            imagen_pil_2 = Image.fromarray(img_color)
+            imagen_pil_2.thumbnail((500, 500), Image.Resampling.LANCZOS)
+            img_tk_2 = ImageTk.PhotoImage(imagen_pil_2)
 
-        imagen_pil_2 = Image.fromarray(img_color)
-        imagen_pil_2.thumbnail((500, 500), Image.Resampling.LANCZOS)
-        
-        img_tk_2 = ImageTk.PhotoImage(imagen_pil_2)
+            lbl_img_2 = tk.Label(self.ventana_N8, image=img_tk_2, bg="#38403D")
+            lbl_img_2.image = img_tk_2 
+            lbl_img_2.pack(padx=20, pady=20)
 
-        lbl_img_2 = tk.Label(ventana_resaltado_2, image=img_tk_2, bg="#38403D")
-        lbl_img_2.image = img_tk_2 
-        lbl_img_2.pack(padx=20, pady=20)
-
-        tk.Label(
-            ventana_resaltado_2, 
-            text=f"Píxeles en el perímetro N8: {perimetro}",
-            fg="white", bg="#38403D", font=("Arial", 12, "bold")
-        ).pack(pady=10)
-    
+            tk.Label(
+                self.ventana_N8, 
+                text=f"Píxeles en el perímetro N8: {perimetro}",
+                fg="white", bg="#38403D", font=("Arial", 12, "bold")
+            ).pack(pady=10)
+        else:
+            messagebox.showinfo("Aviso", "No se ha cargado una imagen.")
     def representar_pixeles(self):
-        # Para que se solapen, escalamos por 2 en lugar de 3
-        # (2 * original + 1) para cubrir los bordes finales
+
         filas_rep = self.fila * 2 + 1
         cols_rep = self.columna * 2 + 1
         matriz_representacion = np.zeros((filas_rep, cols_rep))
@@ -219,7 +249,6 @@ class Pixel:
         for i in range(self.fila):
             for j in range(self.columna): 
                 if self.matriz_binaria[i, j] == 1:
-                    # Usamos desplazamiento de 2 para que las aristas coincidan
                     ni = i * 2 + 1
                     nj = j * 2 + 1
 
@@ -235,12 +264,9 @@ class Pixel:
         
         self.matriz_rep_pixeles=matriz_representacion
 
-
     def recuperar_tamaño_original(self, matriz_escalada):
-        # matriz_escalada es la 'matriz_rellena' de tamaño (2M+1, 2N+1)
         filas_rep, cols_rep = matriz_escalada.shape
         
-        # Operación inversa: n = (n_rep - 1) // 2
         original_filas = (filas_rep - 1) // 2
         original_cols = (cols_rep - 1) // 2
         
@@ -248,18 +274,15 @@ class Pixel:
         
         for i in range(original_filas):
             for j in range(original_cols):
-                # Saltamos a los centros (1, 3, 5...)
                 ni = i * 2 + 1
                 nj = j * 2 + 1
                 matriz_original[i, j] = int(matriz_escalada[ni, nj])
                 
         return matriz_original
 
-
     def verificar_vecidnad_N8(self, i, j, matriz):
         if matriz[i, j] == 0:
             return False
-
 
         if (i == 0 or i == self.fila - 1 or 
             j == 0 or j == self.columna - 1):
@@ -277,6 +300,7 @@ class Pixel:
             return True
 
         return False
+    
     def verificar_vecidnad_N4(self, i, j, matriz):
         if matriz[i, j] == 0:
             return False
@@ -295,13 +319,27 @@ class Pixel:
         return False
     
     def formato_codificado(self, entry):
+        if entry.get() == "":
+            messagebox.showwarning("Aviso", "Código de cadena vacío.")
+            return
+
+        if " - " not in entry.get():
+            messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
+            return
+
         
-        codigo=(str(entry.get()).split(" - "))
+        codigo = (str(entry.get()).split(" - "))
+        tipo   = codigo[0]
 
+        if tipo == "3OT":
+            texto = (f"{tipo} {self.fila}x{self.columna} "
+                    f"{self.x_inicio},{self.y_inicio} "
+                    f"{codigo[1]} "
+                    f"{self.codigo_F4_2[0]}")   
+        else:
+            texto = f"{tipo} {self.fila}x{self.columna} {self.x_inicio},{self.y_inicio} {codigo[1]}"
 
-        texto=f"{codigo[0]} {self.fila}x{self.columna} {self.x_inicio},{self.y_inicio} {codigo[1]}"
-
-        nombre = f"codigo {codigo[0]} {self.fila}x{self.columna}"
+        nombre = f"codigo {self.nombre_imagen} {tipo}"
         carpeta_destino = os.path.dirname(__file__)
         
         if not os.path.exists(carpeta_destino):
@@ -312,316 +350,403 @@ class Pixel:
         with open(nombre_archivo, "w") as archivo:
             archivo.write(texto)
         
-        messagebox.showinfo("Exportar", "Archivo generado correctamente")
+        messagebox.showinfo("Exportar", f"Archivo generado correctamente \n {nombre}")
+
+    def decodificar_archivo(self, entry):
+        ruta = filedialog.askopenfilename(
+            title="Seleccionar archivo de código",
+            filetypes=[("Archivos de texto", "*.txt")]
+        )
+
+        if not ruta:
+            messagebox.showwarning("Aviso", "No se seleccionó ningún archivo.")
+            return
+
+        if not ruta.lower().endswith(".txt"):
+            messagebox.showwarning("Aviso", "El archivo seleccionado no es válido.\nSolo se admiten archivos .txt")
+            return
+
+        with open(ruta, "r") as archivo:
+            linea = archivo.read().strip()
+
+        partes       = linea.split(" ", 3)
+        tipo         = partes[0]
+        dims         = partes[1].split("x")
+        inicio       = partes[2].split(",")
+        texto_cadena = partes[3]
+
+        self.fila     = int(dims[0])
+        self.columna  = int(dims[1])
+        self.x_inicio = int(inicio[0])
+        self.y_inicio = int(inicio[1])
+
+        if tipo == "3OT" and len(partes) > 4:
+            f4_inicial = int(partes[4])
+            self.codigo_F4_2 = [f4_inicial, f4_inicial]
+
+        entry.delete("0", tk.END)
+        entry.insert("end", f"{tipo} - {texto_cadena}")
+
+        messagebox.showinfo("Aviso", f"Código {tipo} importado correctamente.\nPresiona el botón Decodificar para continuar.")
+
+
+    def decodificar_entry(self, entry, label):
     
-    def decodificar_archivo(self):
-        pass
+        if entry.get() == "":
+            messagebox.showwarning("Aviso", "Código de cadena vacío.")
+            return
 
-    def decodificar_entry(self, entry, label_interfaz):
-        
-        print(entry.get())
+        if " - " not in entry.get():
+            messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
+            return
 
-        
-        if entry.get()=="":
-            messagebox.showwarning("Aviso", "Código de cadena vacio.")
-        else:
-            codigo=(str(entry.get()).split(" - "))
-            tipo=codigo[0]
-            texto_cadena=codigo[1]
+        codigo = str(entry.get()).split(" - ")
+        tipo = codigo[0]
+        texto_cadena = codigo[1]
 
-            if tipo=="F4":
+        tipos_validos = ["F4", "F8", "AF8", "VCC", "3OT"]
+        if tipo not in tipos_validos:
+            messagebox.showwarning("Aviso", f"Tipo '{tipo}' no reconocido.")
+            return
 
-                self.representar_pixeles()
-                filas = self.matriz_rep_pixeles.shape[0]
-                columnas = self.matriz_rep_pixeles.shape[1]
-                encontrado = False
-                for i in range(filas):
-                    for j in range(columnas):
-                        if self.matriz_rep_pixeles[i, j] == 1:
-                            x = i 
-                            y = j
-                            encontrado = True
-                            break  
-                    if encontrado:
-                        break  
+        if tipo=="F4":
 
-                paso1 = texto_cadena.strip("[]") 
+            filas    = self.fila * 2 + 1
+            columnas = self.columna * 2 + 1
+            x        = self.x_inicio * 2 + 1
+            y        = self.y_inicio * 2 + 1
 
-                paso2 = paso1.split(",") 
+            paso1 = texto_cadena.strip("[]") 
 
-                cadena = []
-                for i in paso2:
-                    numero = int(i) 
-                    cadena.append(numero)
+            paso2 = paso1.split(",") 
 
-                
+            cadena = []
+            for i in paso2:
+                numero = int(i) 
+                cadena.append(numero)
 
-                matriz_perimetro = np.zeros((filas, columnas))
-
-                n=0
-                matriz_perimetro[x, y]=1
-
-                while (n < len(cadena)):
-
-                    if cadena[n] == 0:
-                        matriz_perimetro[x, y+1]=1
-                        matriz_perimetro[x, y+2]=1
-                        y += 2
-
-                    elif cadena[n]==1:
-                        matriz_perimetro[x+1, y] = 1 
-                        matriz_perimetro[x+2, y] = 1 
-                        x += 2
-
-                    elif cadena[n]==2:
-                        matriz_perimetro[x, y-1] = 1 
-                        matriz_perimetro[x, y-2] = 1 
-                        y -= 2
-
-                    elif cadena[n]==3:
-                        matriz_perimetro[x-1, y] = 1
-                        matriz_perimetro[x-2, y] = 1
-                        x -= 2 
-                    else:
-                        print("Termine")
-
-                    n += 1
-                
-                print(matriz_perimetro)
-        
-                matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
-                # 4. AHORA SÍ: Volver al tamaño original
-                matriz_og = self.recuperar_tamaño_original(matriz_rellena)
-
-                # 5. Mostrar (matriz_og ya tiene el tamaño M x N)
-                img_bw = (matriz_og * 255).astype(np.uint8)
-                imagen_pil = Image.fromarray(img_bw, mode='L')
-
-                imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
-
-                nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
-
-                # 6. Actualizar el label
-                label_interfaz.config(image=nueva_img_tk)
-                label_interfaz.image = nueva_img_tk
-
-            elif tipo=="F8":
-
-        
-                paso1 = texto_cadena.strip("[]") 
-
-                paso2 = paso1.split(",") 
-
-                cadena = []
-                for i in paso2:
-                    numero = int(i) 
-                    cadena.append(numero)
-
-                filas=self.fila
-                columnas=self.columna
-                x=self.x_inicio
-                y=self.y_inicio
-
-                matriz_perimetro = np.zeros((filas, columnas))
-
-                n=0
-                matriz_perimetro[x, y]=1
-
-                while (n < len(cadena)):
-
-                    if cadena[n] == 0:
-                        matriz_perimetro[x, y+1]=1
-                        y += 1
-
-                    elif cadena[n]==1:
-                        matriz_perimetro[x+1, y+1] = 1 
-                        x += 1;  y+=1
-
-                    elif cadena[n]==2:
-                        matriz_perimetro[x+1, y] = 1 
-                        x += 1
-
-                    elif cadena[n]==3:
-                        matriz_perimetro[x+1, y-1] = 1
-                        x += 1; y -= 1
-
-                    elif cadena[n]==4:
-                        matriz_perimetro[x, y-1] = 1
-                        y -= 1
-
-                    elif cadena[n]==5:
-                        matriz_perimetro[x-1, y-1] = 1 
-                        x -= 1; y -= 1
-
-                    elif cadena[n]==6:
-                        matriz_perimetro[x-1, y] = 1 
-                        x -= 1
-                    elif cadena[n]==7:
-                        matriz_perimetro[x-1, y+1] = 1 
-                        x -= 1; y += 1
-                    else:
-                        print("Termine")
-
-                    n += 1
-                
-                print(matriz_perimetro)
-
-                #matriz_horizontal = matriz_perimetro.copy()
-                #matriz_vertical = matriz_perimetro.copy()
-
-                #for i in range(self.fila):
-                 #   pos_1, pos_2 = -1, -1
-                 #   for j in range(self.columna):
-                 #       if matriz_horizontal[i, j] == 1:
-                 #           if pos_1 == -1: pos_1 = j
-                 #           pos_2 = j    
-                 #   if pos_1 != -1 and pos_2 != -1:
-                 #       for k in range(pos_1 + 1, pos_2):
-                 #           matriz_horizontal[i, k] = 1
-
-                #for j in range(self.columna): 
-                 #   pos_1, pos_2 = -1, -1
-                 #   for i in range(self.fila):
-                 #       if matriz_vertical[i, j] == 1:
-                 #           if pos_1 == -1: pos_1 = i
-                 #           pos_2 = i    
-                 #   if pos_1 != -1 and pos_2 != -1:
-                 #       for k in range(pos_1 + 1, pos_2):
-                 #           matriz_vertical[k, j] = 1 
-
-                #matriz_rellena = np.zeros((self.fila, self.columna))
-                matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
-
-                print(matriz_rellena)
-
-                img_bw = (matriz_rellena * 255).astype(np.uint8)
-                imagen_pil = Image.fromarray(img_bw, mode='L')
-
-                imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
-
-                nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
-
-                # 6. Actualizar el label
-                label_interfaz.config(image=nueva_img_tk)
-                label_interfaz.image = nueva_img_tk
-
-            elif tipo == "AF8":
             
-                # 1. Procesar la cadena de texto
-                paso1 = texto_cadena.strip("[]") 
-                paso2 = paso1.split(",") 
-                cadena = [int(i) for i in paso2]
 
-                # 2. Inicializar dimensiones y punto de partida
-                filas, columnas = self.fila, self.columna
-                x, y = self.x_inicio, self.y_inicio
+            matriz_perimetro = np.zeros((filas, columnas))
+
+            n=0
+            matriz_perimetro[x, y]=1
+
+            while (n < len(cadena)):
+
+                if cadena[n] == 0:
+                    matriz_perimetro[x, y+1]=1
+                    matriz_perimetro[x, y+2]=1
+                    y += 2
+
+                elif cadena[n]==1:
+                    matriz_perimetro[x+1, y] = 1 
+                    matriz_perimetro[x+2, y] = 1 
+                    x += 2
+
+                elif cadena[n]==2:
+                    matriz_perimetro[x, y-1] = 1 
+                    matriz_perimetro[x, y-2] = 1 
+                    y -= 2
+
+                elif cadena[n]==3:
+                    matriz_perimetro[x-1, y] = 1
+                    matriz_perimetro[x-2, y] = 1
+                    x -= 2 
+                else:
+                    print("Termine")
+
+                n += 1
+            
+            print(matriz_perimetro)
+    
+            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+            matriz_og = self.recuperar_tamaño_original(matriz_rellena)
+
+            img_bw = (matriz_og * 255).astype(np.uint8)
+            imagen_pil = Image.fromarray(img_bw, mode='L')
+
+            imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+
+            nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
+
+            label.config(image=nueva_img_tk)
+            label.image = nueva_img_tk
+
+        elif tipo=="F8":
+
+    
+            paso1 = texto_cadena.strip("[]") 
+
+            paso2 = paso1.split(",") 
+
+            cadena = []
+            for i in paso2:
+                numero = int(i) 
+                cadena.append(numero)
+
+            filas=self.fila
+            columnas=self.columna
+            x=self.x_inicio
+            y=self.y_inicio
+
+            matriz_perimetro = np.zeros((filas, columnas))
+
+            n=0
+            matriz_perimetro[x, y]=1
+
+            while (n < len(cadena)):
+
+                if cadena[n] == 0:
+                    matriz_perimetro[x, y+1]=1
+                    y += 1
+
+                elif cadena[n]==1:
+                    matriz_perimetro[x+1, y+1] = 1 
+                    x += 1;  y+=1
+
+                elif cadena[n]==2:
+                    matriz_perimetro[x+1, y] = 1 
+                    x += 1
+
+                elif cadena[n]==3:
+                    matriz_perimetro[x+1, y-1] = 1
+                    x += 1; y -= 1
+
+                elif cadena[n]==4:
+                    matriz_perimetro[x, y-1] = 1
+                    y -= 1
+
+                elif cadena[n]==5:
+                    matriz_perimetro[x-1, y-1] = 1 
+                    x -= 1; y -= 1
+
+                elif cadena[n]==6:
+                    matriz_perimetro[x-1, y] = 1 
+                    x -= 1
+                elif cadena[n]==7:
+                    matriz_perimetro[x-1, y+1] = 1 
+                    x -= 1; y += 1
+                else:
+                    print("Termine")
+
+                n += 1
+            
+            print(matriz_perimetro)
+
+            #matriz_horizontal = matriz_perimetro.copy()
+            #matriz_vertical = matriz_perimetro.copy()
+
+            #for i in range(self.fila):
+                #   pos_1, pos_2 = -1, -1
+                #   for j in range(self.columna):
+                #       if matriz_horizontal[i, j] == 1:
+                #           if pos_1 == -1: pos_1 = j
+                #           pos_2 = j    
+                #   if pos_1 != -1 and pos_2 != -1:
+                #       for k in range(pos_1 + 1, pos_2):
+                #           matriz_horizontal[i, k] = 1
+
+            #for j in range(self.columna): 
+                #   pos_1, pos_2 = -1, -1
+                #   for i in range(self.fila):
+                #       if matriz_vertical[i, j] == 1:
+                #           if pos_1 == -1: pos_1 = i
+                #           pos_2 = i    
+                #   if pos_1 != -1 and pos_2 != -1:
+                #       for k in range(pos_1 + 1, pos_2):
+                #           matriz_vertical[k, j] = 1 
+
+            #matriz_rellena = np.zeros((self.fila, self.columna))
+            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+
+            print(matriz_rellena)
+
+            img_bw = (matriz_rellena * 255).astype(np.uint8)
+            imagen_pil = Image.fromarray(img_bw, mode='L')
+
+            imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+
+            nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
+
+            # 6. Actualizar el label
+            label.config(image=nueva_img_tk)
+            label.image = nueva_img_tk
+
+        elif tipo == "AF8":
+        
+            paso1 = texto_cadena.strip("[]") 
+            paso2 = paso1.split(",") 
+            cadena = [int(i) for i in paso2]
+
+            filas, columnas = self.fila, self.columna
+            x, y = self.x_inicio, self.y_inicio
+            
+            matriz_perimetro = np.zeros((filas, columnas))
+            matriz_perimetro[x, y] = 1 
+
+            dir_actual = 0 
+
+            for i in range(len(cadena)):
+   
+                dir_actual = (dir_actual + cadena[i]) % 8
                 
-                matriz_perimetro = np.zeros((filas, columnas))
-                matriz_perimetro[x, y] = 1 # Pintar punto de inicio
-
-                # La dirección inicial es RELATIVA a 0 para el primer movimiento
-                dir_actual = 0 
-
-                # 3. Reconstruir el perímetro
-                for i in range(len(cadena)):
-                    # El primer número nos da la dirección inicial absoluta
-                    # Los siguientes se suman para obtener el nuevo rumbo
-                    dir_actual = (dir_actual + cadena[i]) % 8
-                    
-                    if dir_actual == 0:   y += 1             # Este
-                    elif dir_actual == 1: x += 1; y += 1      # Sureste
-                    elif dir_actual == 2: x += 1             # Sur
-                    elif dir_actual == 3: x += 1; y -= 1      # Suroeste
-                    elif dir_actual == 4: y -= 1             # Oeste
-                    elif dir_actual == 5: x -= 1; y -= 1      # Noroeste
-                    elif dir_actual == 6: x -= 1             # Norte
-                    elif dir_actual == 7: x -= 1; y += 1      # Noreste
-                    
-                    # Verificación de límites
-                    if 0 <= x < filas and 0 <= y < columnas:
-                        matriz_perimetro[x, y] = 1
-
-
-                matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
-
-                # 5. Mostrar imagen corregida
-                img_bw = (matriz_rellena * 255).astype(np.uint8)
-                imagen_pil = Image.fromarray(img_bw, mode='L')
-                imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+                if dir_actual == 0:   y += 1            
+                elif dir_actual == 1: x += 1; y += 1      
+                elif dir_actual == 2: x += 1            
+                elif dir_actual == 3: x += 1; y -= 1      
+                elif dir_actual == 4: y -= 1             
+                elif dir_actual == 5: x -= 1; y -= 1     
+                elif dir_actual == 6: x -= 1             
+                elif dir_actual == 7: x -= 1; y += 1      
                 
-                nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
-                label_interfaz.config(image=nueva_img_tk)
-                label_interfaz.image = nueva_img_tk
+                if 0 <= x < filas and 0 <= y < columnas:
+                    matriz_perimetro[x, y] = 1
 
-            elif tipo == "VCC":
-                from scipy.ndimage import binary_fill_holes
-                
-                self.representar_pixeles()
-                filas, columnas = self.matriz_rep_pixeles.shape
-                
-                # Buscar inicio dinámico
-                x, y = 0, 0
-                encontrado = False
-                for i in range(filas):
-                    for j in range(columnas):
-                        if self.matriz_rep_pixeles[i, j] == 1:
-                            x, y = i, j
-                            encontrado = True
-                            break
-                    if encontrado:
+
+            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+
+            img_bw = (matriz_rellena * 255).astype(np.uint8)
+            imagen_pil = Image.fromarray(img_bw, mode='L')
+            imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+            
+            nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
+            label.config(image=nueva_img_tk)
+            label.image = nueva_img_tk
+
+        elif tipo == "VCC":
+            
+            filas    = self.fila * 2 + 1
+            columnas = self.columna * 2 + 1
+            x        = self.x_inicio * 2 + 1
+            y        = self.y_inicio * 2 + 1
+
+            limpio = texto_cadena.strip("[]")
+            cadena = [int(i.strip()) for i in limpio.split(",") if i.strip()]
+
+            matriz_perimetro = np.zeros((filas, columnas))
+
+            dx, dy = 0, 2
+            
+            matriz_perimetro[x, y] = 1
+            n=0
+            for giro in cadena:
+                print(giro)
+
+
+                if giro == 0:
+                    pass  
+                elif giro == 1: 
+                    dx, dy = dy, -dx
+                elif giro == 2:  
+                    dx, dy = -dy, dx
+
+                mid_x = x + dx // 2
+                mid_y = y + dy // 2
+
+                x += dx
+                y += dy
+
+                if 0 <= x < filas and 0 <= y < columnas:
+                    matriz_perimetro[mid_x, mid_y] = 1
+                    matriz_perimetro[x, y] = 1
+                else:
+                    break
+                print(matriz_perimetro)
+                n=n+1
+
+            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+            
+            matriz_og = self.recuperar_tamaño_original(matriz_rellena)
+
+            img_bw = (matriz_og * 255).astype(np.uint8)
+            imagen_pil = Image.fromarray(img_bw, mode='L')
+            imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+
+            nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
+            label.config(image=nueva_img_tk)
+            label.image = nueva_img_tk
+        elif tipo == "3OT":
+
+
+            filas    = self.fila * 2 + 1
+            columnas = self.columna * 2 + 1
+            x        = self.x_inicio * 2 + 1
+            y        = self.y_inicio * 2 + 1
+
+            paso1 = texto_cadena.strip("[]")
+            paso2 = paso1.split(",")
+            c_3ot = []
+            for i in paso2:
+                c_3ot.append(int(i.strip()))
+
+
+            f4_inicial = self.codigo_F4_2[0]
+            cadena = [f4_inicial]
+
+            for i in range(len(c_3ot)):
+                current = cadena[i]
+
+                k = None
+                for j in range(i - 1, -1, -1):
+                    if cadena[j] != current:
+                        k = cadena[j]
                         break
-
-                # Procesar cadena
-                limpio = texto_cadena.strip("[]")
-                cadena = [int(i.strip()) for i in limpio.split(",") if i.strip()]
-
-                matriz_perimetro = np.zeros((filas, columnas))
-
-                # Dirección inicial (derecha)
-                dx, dy = 0, 2
                 
-                matriz_perimetro[x, y] = 1
-                n=0
-                for giro in cadena:
-                    print(giro)
+                if k is None:
+                    k = int(self.codigo_F4_2[-1])
 
+                val = c_3ot[i]
+                if val == 0:
+                    next_dir = current
+                elif val == 1:
+                    next_dir = k          
+                elif val == 2:
+                    next_dir = (k + 2) % 4  
+                else:
+                    print("Valor 3OT inesperado:", val)
+                    break
 
-                    if giro == 0:
-                        pass  # recto
-                    elif giro == 1:  # derecha
-                        dx, dy = dy, -dx
-                    elif giro == 2:  # izquierda
-                        dx, dy = -dy, dx
+                cadena.append(next_dir)
 
-                    # Punto intermedio (evitar huecos)
-                    mid_x = x + dx // 2
-                    mid_y = y + dy // 2
+            cadena = cadena[:-1]
 
-                    x += dx
-                    y += dy
+            matriz_perimetro = np.zeros((filas, columnas))
+            n = 0
+            matriz_perimetro[x, y] = 1
 
-                    if 0 <= x < filas and 0 <= y < columnas:
-                        matriz_perimetro[mid_x, mid_y] = 1
-                        matriz_perimetro[x, y] = 1
-                    else:
-                        break
-                    print(matriz_perimetro)
-                    n=n+1
+            while n < len(cadena):
+                if cadena[n] == 0:
+                    matriz_perimetro[x, y+1] = 1
+                    matriz_perimetro[x, y+2] = 1
+                    y += 2
+                elif cadena[n] == 1:
+                    matriz_perimetro[x+1, y] = 1
+                    matriz_perimetro[x+2, y] = 1
+                    x += 2
+                elif cadena[n] == 2:
+                    matriz_perimetro[x, y-1] = 1
+                    matriz_perimetro[x, y-2] = 1
+                    y -= 2
+                elif cadena[n] == 3:
+                    matriz_perimetro[x-1, y] = 1
+                    matriz_perimetro[x-2, y] = 1
+                    x -= 2
+                else:
+                    print("Termine")
+                n += 1
 
-                # Rellenar figura
-                matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
-                
-                matriz_og = self.recuperar_tamaño_original(matriz_rellena)
+            print(matriz_perimetro)
 
-                img_bw = (matriz_og * 255).astype(np.uint8)
-                imagen_pil = Image.fromarray(img_bw, mode='L')
-                imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+            matriz_og = self.recuperar_tamaño_original(matriz_rellena)
+            img_bw = (matriz_og * 255).astype(np.uint8)
+            imagen_pil = Image.fromarray(img_bw, mode='L')
+            imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+            nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
+            label.config(image=nueva_img_tk)
+            label.image = nueva_img_tk
 
-                nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
-                label_interfaz.config(image=nueva_img_tk)
-                label_interfaz.image = nueva_img_tk
-
-                
     def vecindad_N8_perimetro(self, matriz_1):
         
         matriz = np.zeros_like(matriz_1)
@@ -646,8 +771,10 @@ class Pixel:
         return matriz
     
     def f4(self, entry):
+        if len(self.matriz_binaria) == 0:
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+            return
 
-                
         encontrado = False
         for i in range(self.fila):
             for j in range(self.columna):
@@ -659,10 +786,6 @@ class Pixel:
                     break  
             if encontrado:
                 break  
-
-
-
-
 
         self.representar_pixeles()
 
@@ -744,7 +867,6 @@ class Pixel:
         n=0
         self.codigo_F4 = codigo
         
-        # Actualizar la interfaz (Tkinter)
         entry.delete("0", "end")
         entry.insert("end", "F4 - ")
         entry.insert("end", str(codigo))
@@ -752,7 +874,9 @@ class Pixel:
         return self.codigo_F4
     
     def f4_2(self):
-
+        if len(self.matriz_binaria) == 0:
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+            return
                 
         encontrado = False
         for i in range(self.fila):
@@ -842,10 +966,14 @@ class Pixel:
             n += 1
         n=0
         self.codigo_F4 = codigo
+        self.codigo_F4_2 = codigo
     
         return self.codigo_F4
 
     def f8(self, entry):
+        if len(self.matriz_binaria) == 0:
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+            return
         codigo = []
         x, y = 0, 0
         encontrado = False
@@ -871,46 +999,40 @@ class Pixel:
         pos_recorridas.add((x, y))
         while n < max_pasos:
 
-            
-
-
-            
-            # Dirección 0
             if self.matriz_binaria[x, y+1] == 1 and ((x, y+1) not in pos_recorridas or (x, y+1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x, y+1, self.matriz_binaria):
                 codigo.append(0); y += 1
                 pos_recorridas.add((x, y))
-            # Dirección 1
+
             elif self.matriz_binaria[x+1, y+1] == 1 and ((x+1, y+1) not in pos_recorridas or (x+1, y+1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x+1, y+1, self.matriz_binaria):
                 codigo.append(1); x += 1; y += 1
                 pos_recorridas.add((x, y))
-            # Dirección 2
+
             elif self.matriz_binaria[x+1, y] == 1 and ((x+1, y) not in pos_recorridas or (x+1, y) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x+1, y, self.matriz_binaria):
                 codigo.append(2); x += 1
                 pos_recorridas.add((x, y))
-            # Dirección 3
+
             elif self.matriz_binaria[x+1, y-1] == 1 and ((x+1, y-1) not in pos_recorridas or (x+1, y-1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x+1, y-1, self.matriz_binaria):
                 codigo.append(3); x += 1; y -= 1
                 pos_recorridas.add((x, y))
-            # Dirección 4
+
             elif self.matriz_binaria[x, y-1] == 1 and ((x, y-1) not in pos_recorridas or (x, y-1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x, y-1, self.matriz_binaria):
                 codigo.append(4); y -= 1
                 pos_recorridas.add((x, y))
-            # Dirección 5
+
             elif self.matriz_binaria[x-1, y-1] == 1 and ((x-1, y-1) not in pos_recorridas or (x-1, y-1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x-1, y-1, self.matriz_binaria):
                 codigo.append(5); x -= 1; y -= 1
                 pos_recorridas.add((x, y))
-            # Dirección 6
+
             elif self.matriz_binaria[x-1, y] == 1 and ((x-1, y) not in pos_recorridas or (x-1, y) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x-1, y, self.matriz_binaria):
                 codigo.append(6); x -= 1
                 pos_recorridas.add((x, y))
-            # Dirección 7 (La que te falta)
+
             elif self.matriz_binaria[x-1, y+1] == 1 and ((x-1, y+1) not in pos_recorridas or (x-1, y+1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x-1, y+1, self.matriz_binaria):
                 codigo.append(7); x -= 1; y += 1
                 pos_recorridas.add((x, y))
             else:
                 break
 
-            # Verificamos si ya llegamos al origen DESPUÉS de haber movido x, y
             if (x, y) == (inicio_x, inicio_y):
                 print("¡Contorno cerrado con el último paso!")
                 break
@@ -919,7 +1041,6 @@ class Pixel:
         print(f"Código F8 Final: {codigo} (Longitud: {len(codigo)})")
         n=0
 
-        # Actualizar interfaz
         self.codigo_F8 = codigo
         entry.delete("0", tk.END)  
         entry.insert("end", f"F8 - {codigo}")
@@ -927,11 +1048,13 @@ class Pixel:
         return self.codigo_F8
     
     def f8_2(self):
+        if len(self.matriz_binaria) == 0:
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+            return
         codigo = []
         x, y = 0, 0
         encontrado = False
 
-        # 1. Búsqueda del primer punto
         for i in range(self.fila):
             for j in range(self.columna):
                 if self.matriz_binaria[i, j] == 1:
@@ -952,46 +1075,40 @@ class Pixel:
         pos_recorridas.add((x, y))
         while n < max_pasos:
 
-            
-
-
-            
-            # Dirección 0
             if self.matriz_binaria[x, y+1] == 1 and ((x, y+1) not in pos_recorridas or (x, y+1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x, y+1, self.matriz_binaria):
                 codigo.append(0); y += 1
                 pos_recorridas.add((x, y))
-            # Dirección 1
+            
             elif self.matriz_binaria[x+1, y+1] == 1 and ((x+1, y+1) not in pos_recorridas or (x+1, y+1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x+1, y+1, self.matriz_binaria):
                 codigo.append(1); x += 1; y += 1
                 pos_recorridas.add((x, y))
-            # Dirección 2
+            
             elif self.matriz_binaria[x+1, y] == 1 and ((x+1, y) not in pos_recorridas or (x+1, y) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x+1, y, self.matriz_binaria):
                 codigo.append(2); x += 1
                 pos_recorridas.add((x, y))
-            # Dirección 3
+            
             elif self.matriz_binaria[x+1, y-1] == 1 and ((x+1, y-1) not in pos_recorridas or (x+1, y-1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x+1, y-1, self.matriz_binaria):
                 codigo.append(3); x += 1; y -= 1
                 pos_recorridas.add((x, y))
-            # Dirección 4
+
             elif self.matriz_binaria[x, y-1] == 1 and ((x, y-1) not in pos_recorridas or (x, y-1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x, y-1, self.matriz_binaria):
                 codigo.append(4); y -= 1
                 pos_recorridas.add((x, y))
-            # Dirección 5
+
             elif self.matriz_binaria[x-1, y-1] == 1 and ((x-1, y-1) not in pos_recorridas or (x-1, y-1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x-1, y-1, self.matriz_binaria):
                 codigo.append(5); x -= 1; y -= 1
                 pos_recorridas.add((x, y))
-            # Dirección 6
+
             elif self.matriz_binaria[x-1, y] == 1 and ((x-1, y) not in pos_recorridas or (x-1, y) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x-1, y, self.matriz_binaria):
                 codigo.append(6); x -= 1
                 pos_recorridas.add((x, y))
-            # Dirección 7 (La que te falta)
+
             elif self.matriz_binaria[x-1, y+1] == 1 and ((x-1, y+1) not in pos_recorridas or (x-1, y+1) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N4(x-1, y+1, self.matriz_binaria):
                 codigo.append(7); x -= 1; y += 1
                 pos_recorridas.add((x, y))
             else:
                 break
 
-            # Verificamos si ya llegamos al origen DESPUÉS de haber movido x, y
             if (x, y) == (inicio_x, inicio_y):
                 print("¡Contorno cerrado con el último paso!")
                 break
@@ -1000,26 +1117,24 @@ class Pixel:
         print(f"Código F8 Final: {codigo} (Longitud: {len(codigo)})")
         n=0
 
-        # Actualizar interfaz
         self.codigo_F8 = codigo
-
 
         return self.codigo_F8
 
     def af8(self, entry):
+        if len(self.matriz_binaria) == 0:
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+            return
         codigo = self.f8_2() # Obtiene F8 absoluto
         if not codigo: return []
         
-        # El primer elemento es la dirección absoluta inicial
         a_f8 = [int(codigo[0])] 
         
-        # Los demás son los diferenciales (giros)
         for i in range(len(codigo) - 1):
             aux = (int(codigo[i+1]) - int(codigo[i])) % 8
             a_f8.append(aux)
             
         self.codigo_AF8 = a_f8
-        # ... (resto de tu print y entry)
         
         print(f"Código AF8 Final: {a_f8} (Longitud: {len(a_f8)})")
 
@@ -1030,10 +1145,13 @@ class Pixel:
         return self.codigo_AF8
 
     def vcc_3(self, entry):
+
+        if len(self.matriz_binaria) == 0:
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+            return
         self.representar_pixeles()
         filas, columnas = self.matriz_rep_pixeles.shape
 
-        # 🔍 Buscar primer pixel (inicio)
         encontrado = False
         for i in range(filas):
             for j in range(columnas):
@@ -1049,7 +1167,6 @@ class Pixel:
         pos_recorridas = [(x, y)]
         codigo = []
 
-        # 👉 Dirección inicial (derecha en escala 2)
         dir_anterior = (0, 2)
 
         max_iter = filas * columnas
@@ -1060,11 +1177,10 @@ class Pixel:
 
             dx, dy = dir_anterior
 
-            # 🔥 IMPORTANTE: NO pisar dx, dy
             opciones = [
-                (-dy, dx),   # izquierda primero
-                (dx, dy),    # recto
-                (dy, -dx)    # derecha
+                (-dy, dx),   
+                (dx, dy),    
+                (dy, -dx)    
             ]
             for ndx, ndy in opciones:
 
@@ -1074,7 +1190,6 @@ class Pixel:
                     self.matriz_rep_pixeles[nx, ny] == 1 and
                     ((nx, ny) not in pos_recorridas or (nx, ny) == (start_x, start_y))):
 
-                    # 🧠 Calcular giro correctamente
                     x1, y1 = dir_anterior
                     x2, y2 = ndx, ndy
 
@@ -1087,14 +1202,12 @@ class Pixel:
                     else:
                         codigo.append(2)  # izquierda
 
-                    # 🚶 mover
                     x += ndx
                     y += ndy
 
                     dir_anterior = (ndx, ndy)
                     pos_recorridas.append((x, y))
 
-                    # 🔁 cierre de ciclo
                     if (x, y) == (start_x, start_y):
                         movido = True
                         break
@@ -1107,7 +1220,6 @@ class Pixel:
 
             n += 1
 
-        # 🧾 guardar resultado
         self.codigo_VCC3 = codigo
         entry.delete("0", "end")
         entry.insert("end", f"VCC - {codigo}")
@@ -1115,40 +1227,38 @@ class Pixel:
         return codigo
     
     def _3ot(self, entry):
-        # Obtenemos el código F4
+
+        if len(self.matriz_binaria) == 0:
+            messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+            return
+        
         codigo = self.f4_2() 
         n = len(codigo)
         c_3ot = []
         
-        # Manejo circular: CF4(n+1) := CF4(1)
         codigo_extendido = codigo + [codigo[0]]
         
         for i in range(n):
             actual = int(codigo_extendido[i])
             siguiente = int(codigo_extendido[i+1])
             
-            # 1. Si no hay cambio de dirección
             if siguiente == actual:
                 c_3ot.append(0)
             else:
-                # 2. Si hay cambio, buscamos la referencia k (último valor diferente a actual)
                 k = None
                 for j in range(i - 1, -1, -1):
                     if int(codigo[j]) != actual:
                         k = int(codigo[j])
                         break
                 
-                # Si no hay previo (inicio de la cadena), usamos el último del arreglo
                 if k is None:
                     k = int(codigo[-1])
                 
-                # 3. Aplicamos la lógica de la matriz omitiendo el caso "*"
                 if siguiente == k:
                     c_3ot.append(1)
                 elif siguiente == (k + 2) % 4:
                     c_3ot.append(2)
                 else:
-                    # Omitimos cualquier otra transición no contemplada
                     pass
 
         self.codigo_3OT = c_3ot
@@ -1158,11 +1268,18 @@ class Pixel:
 
         entry.delete("0",tk.END)  
         entry.insert("end","3OT - ")  
-        entry.insert("end",str(codigo))
+        entry.insert("end", str(c_3ot))
         return self.codigo_3OT
     
+    def compresion_huffman(self, entry, label):
+        if entry.get() == "":
+            messagebox.showwarning("Aviso", "Código de cadena vacío.")
+            return
 
-    def compresion_huffman(self, etiqueta_interfaz, entry):
+        if " - " not in entry.get():
+            messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
+            return
+
         codigo=(str(entry.get()).split(" - "))
         tipo=codigo[0]
         texto_cadena=codigo[1]
@@ -1179,15 +1296,12 @@ class Pixel:
         n = len(codigo) 
         frecuencias = Counter(codigo)
         
-        # [frecuencia, [simbolo, "binario"]]
         heap = [[f, [s, ""]] for s, f in frecuencias.items()]
         heapq.heapify(heap)
         
-        # Huffman
         while len(heap) > 1:
             bajo = heapq.heappop(heap)
             alto = heapq.heappop(heap)
-            # 0 a la rama izquierda y 1 a la derecha
             for par in bajo[1:]:
                 par[1] = '0' + par[1]
             for par in alto[1:]:
@@ -1208,6 +1322,126 @@ class Pixel:
         longitud_promedio = total_bits_acumulados / n
         print(total_bits_acumulados)
         print(n)
-        etiqueta_interfaz.config(text=f"{longitud_promedio:.4f}")
+        label.config(text=f"{longitud_promedio:.4f}")
      
-        
+    def tabla(self, codigo):
+        frecuencia = Counter(codigo)
+        N = len(codigo)
+        datos = pd.DataFrame({
+            'Simbolo': list(frecuencia.keys()),
+            'Frecuencia': list(frecuencia.values())
+        })
+        datos['Probabilidad'] = datos['Frecuencia'] / N
+        datos = datos.sort_values(by='Simbolo')
+        return datos 
+
+    def histograma(self, entry):
+        if entry.get() == "":
+            messagebox.showwarning("Aviso", "Código de cadena vacío.")
+            return
+
+        if " - " not in entry.get():
+            messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
+            return
+
+        codigo_str   = str(entry.get()).split(" - ")
+        tipo         = codigo_str[0]
+        texto_cadena = codigo_str[1]
+
+        codigo = [int(i) for i in texto_cadena.strip("[]").split(",")]
+
+        datos = self.tabla(codigo)
+
+        fig, axf = plt.subplots(facecolor="white")  
+        axf.set_facecolor("white")                 
+
+        axf.bar(datos['Simbolo'], datos['Frecuencia'],
+                width=0.9,
+                facecolor="#CC785C",  
+                linewidth=0.1)
+
+        axf.set(
+            xlim=(-0.5, np.max(codigo) + 0.5),
+            xticks=np.arange(0, np.max(codigo) + 1),
+            ylim=(0, np.max(datos['Frecuencia']) + max(0.5, np.max(datos['Frecuencia']) // 10)),
+            yticks=np.arange(0, np.max(datos['Frecuencia']) + 1, max(1, np.max(datos['Frecuencia']) // 10))
+        )
+        axf.set_xlabel("Elemento del código")
+        axf.set_ylabel("Frecuencia", color="#CC785C")  
+
+        ventana_hist = tk.Toplevel()
+        ventana_hist.title(f"Histograma — {tipo}")
+        ventana_hist.configure(bg="#38403D")           
+
+        canvas = FigureCanvasTkAgg(fig, master=ventana_hist)
+        canvas.get_tk_widget().configure(bg="#38403D") 
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+    def propiedades_geometricas(self, label_perimetro, label_area, label_perimetro_c, label_euler, label_com_discreta):
+        if len(self.matriz_binaria) != 0:
+
+            perimetro = 0
+            area = 0
+            perimetro_contacto = 0
+            caracteristica_euler = 0
+            com_discreta = 0
+            matriz = self.matriz_binaria
+
+            for i in range(self.fila):
+                for j in range(self.columna):
+                    if matriz[i, j] == 1:
+                        area += 1
+                        if (i == 0 or i == self.fila - 1 or j == 0 or j == self.columna - 1):
+                            if i == 0:                
+                                perimetro += 1
+                            if i == self.fila - 1:    
+                                perimetro += 1
+                            if j == 0:                
+                                perimetro += 1
+                            if j == self.columna - 1: 
+                                perimetro += 1
+                        else:
+                            if matriz[i-1, j] == 0:  
+                                perimetro += 1
+                            if matriz[i+1, j] == 0:   
+                                perimetro += 1
+                            if matriz[i, j-1] == 0:   
+                                perimetro += 1
+                            if matriz[i, j+1] == 0:   
+                                perimetro += 1
+
+            perimetro_contacto = (4 * area - perimetro) / 2
+
+            Q1, Q3, QD = 0, 0, 0
+            for i in range(self.fila - 1):
+                for j in range(self.columna - 1):
+                    p1 = int(matriz[i,   j  ])
+                    p2 = int(matriz[i,   j+1])
+                    p3 = int(matriz[i+1, j  ])
+                    p4 = int(matriz[i+1, j+1])
+                    suma = p1 + p2 + p3 + p4
+                    if suma == 1:
+                        Q1 += 1
+                    elif suma == 3:
+                        Q3 += 1
+                    elif suma == 2:
+                        if (p1 == 1 and p4 == 1 and p2 == 0 and p3 == 0):
+                            QD += 1
+                        elif (p2 == 1 and p3 == 1 and p1 == 0 and p4 == 0):
+                            QD += 1
+
+            caracteristica_euler = (Q1 - Q3 + 2 * QD) / 4
+
+            if area - math.sqrt(area) != 0:
+                com_discreta = (area - (perimetro / 4)) / (area - math.sqrt(area))
+            else:
+                com_discreta = 0
+
+            label_perimetro.config(text=f"{perimetro}")
+            label_area.config(text=f"{area}")
+            label_perimetro_c.config(text=f"{perimetro_contacto:.4f}")
+            label_euler.config(text=f"{caracteristica_euler:.4f}")
+            label_com_discreta.config(text=f"{com_discreta:.4f}")
+        else:
+            messagebox.showinfo("Aviso", "No se ha cargado una imagen.")
