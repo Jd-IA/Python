@@ -1,18 +1,15 @@
+# Librería estándar
 import math
-import tkinter as tk
-import heapq
 import os
-import numpy as np
+import heapq
 from collections import Counter
-from tkinter import filedialog
-from tkinter import messagebox
-from PIL import Image, ImageTk
-from scipy.ndimage import binary_fill_holes
-import matplotlib.pyplot as plt
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
+from PIL import Image, ImageTk
 
 class Pixel:
     def __init__(self):
@@ -101,7 +98,6 @@ class Pixel:
         
         print("Imagen actualizada en la interfaz y datos cargados.")
 
-
     def cargar_matriz(self):
 
         self.ruta_archivo_og = filedialog.askopenfilename()
@@ -172,7 +168,7 @@ class Pixel:
             self.ventana_N4.config(bg="#38403D")
 
             imagen_pil = Image.fromarray(img_color)
-            imagen_pil.thumbnail((500, 500), Image.Resampling.LANCZOS)
+            imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
             img_tk = ImageTk.PhotoImage(imagen_pil)
 
             lbl_img = tk.Label(self.ventana_N4, image=img_tk, bg="#38403D")
@@ -186,7 +182,6 @@ class Pixel:
             ).pack(pady=10)
         else:
             messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
-        
 
     def vecindad_N8(self):
         if self.ventana_N8 is not None and self.ventana_N8.winfo_exists():
@@ -239,6 +234,7 @@ class Pixel:
             ).pack(pady=10)
         else:
             messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
+
     def representar_pixeles(self):
 
         filas_rep = self.fila * 2 + 1
@@ -401,7 +397,68 @@ class Pixel:
 
         messagebox.showinfo("Aviso", f"Código {tipo} importado correctamente.\nPresiona el botón Decodificar para continuar.")
 
+    def rellenar_figura(self, matriz_perimetro, filas, columnas):
+        matriz_h = matriz_perimetro.copy()
+        for i in range(filas):
+            pos_1, pos_2 = -1, -1
+            for j in range(columnas):
+                if matriz_h[i, j] == 1:
+                    if pos_1 == -1: pos_1 = j
+                    pos_2 = j
+            if pos_1 != -1 and pos_2 != -1:
+                for k in range(pos_1 + 1, pos_2):
+                    matriz_h[i, k] = 1
 
+        matriz_v = matriz_perimetro.copy()
+        for j in range(columnas):
+            pos_1, pos_2 = -1, -1
+            for i in range(filas):
+                if matriz_v[i, j] == 1:
+                    if pos_1 == -1: pos_1 = i
+                    pos_2 = i
+            if pos_1 != -1 and pos_2 != -1:
+                for k in range(pos_1 + 1, pos_2):
+                    matriz_v[k, j] = 1
+
+        matriz_d1 = matriz_perimetro.copy()
+        for d in range(-(filas - 1), columnas):
+            pos_1, pos_2 = -1, -1
+            for i in range(filas):
+                j = i + d
+                if 0 <= j < columnas:
+                    if matriz_d1[i, j] == 1:
+                        if pos_1 == -1: pos_1 = i
+                        pos_2 = i
+            if pos_1 != -1 and pos_2 != -1:
+                for i in range(pos_1 + 1, pos_2):
+                    j = i + d
+                    if 0 <= j < columnas:
+                        matriz_d1[i, j] = 1
+
+        matriz_d2 = matriz_perimetro.copy()
+        for d in range(filas + columnas - 1):
+            pos_1, pos_2 = -1, -1
+            for i in range(filas):
+                j = d - i
+                if 0 <= j < columnas:
+                    if matriz_d2[i, j] == 1:
+                        if pos_1 == -1: pos_1 = i
+                        pos_2 = i
+            if pos_1 != -1 and pos_2 != -1:
+                for i in range(pos_1 + 1, pos_2):
+                    j = d - i
+                    if 0 <= j < columnas:
+                        matriz_d2[i, j] = 1
+
+        matriz_rellena = np.zeros((filas, columnas), dtype=int)
+        for i in range(filas):
+            for j in range(columnas):
+                if (matriz_h[i, j] == 1 and matriz_v[i, j] == 1 and
+                    matriz_d1[i, j] == 1 and matriz_d2[i, j] == 1):
+                    matriz_rellena[i, j] = 1
+
+        return matriz_rellena
+    
     def decodificar_entry(self, entry, label):
         
         if entry.get() == "":
@@ -442,10 +499,7 @@ class Pixel:
                 numero = int(i) 
                 cadena.append(numero)
 
-            
-
             matriz_perimetro = np.zeros((filas, columnas))
-
             n=0
             matriz_perimetro[x, y]=1
 
@@ -476,17 +530,16 @@ class Pixel:
                 n += 1
             
             print(matriz_perimetro)
+            
+            matriz_rellena = self.rellenar_figura(matriz_perimetro, filas, columnas)
     
-            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
             matriz_og = self.recuperar_tamaño_original(matriz_rellena)
 
             img_bw = (matriz_og * 255).astype(np.uint8)
             imagen_pil = Image.fromarray(img_bw, mode='L')
-
             imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
 
             nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
-
             label.config(image=nueva_img_tk)
             label.image = nueva_img_tk
 
@@ -515,42 +568,46 @@ class Pixel:
             while (n < len(cadena)):
 
                 if cadena[n] == 0:
-                    matriz_perimetro[x, y+1]=1
+                    matriz_perimetro[x, y+1] = 1
                     y += 1
 
-                elif cadena[n]==1:
-                    matriz_perimetro[x+1, y+1] = 1 
-                    x += 1;  y+=1
+                elif cadena[n] == 1:
+                    matriz_perimetro[x, y+1] = 1     
+                    matriz_perimetro[x+1, y+1] = 1
+                    x += 1; y += 1
 
-                elif cadena[n]==2:
-                    matriz_perimetro[x+1, y] = 1 
+                elif cadena[n] == 2:
+                    matriz_perimetro[x+1, y] = 1
                     x += 1
 
-                elif cadena[n]==3:
+                elif cadena[n] == 3:
+                    matriz_perimetro[x, y-1] = 1      
                     matriz_perimetro[x+1, y-1] = 1
                     x += 1; y -= 1
 
-                elif cadena[n]==4:
+                elif cadena[n] == 4:
                     matriz_perimetro[x, y-1] = 1
                     y -= 1
 
-                elif cadena[n]==5:
-                    matriz_perimetro[x-1, y-1] = 1 
+                elif cadena[n] == 5:
+                    matriz_perimetro[x, y-1] = 1      
+                    matriz_perimetro[x-1, y-1] = 1
                     x -= 1; y -= 1
 
-                elif cadena[n]==6:
-                    matriz_perimetro[x-1, y] = 1 
+                elif cadena[n] == 6:
+                    matriz_perimetro[x-1, y] = 1
                     x -= 1
-                elif cadena[n]==7:
-                    matriz_perimetro[x-1, y+1] = 1 
+
+                elif cadena[n] == 7:
+                    matriz_perimetro[x, y+1] = 1      
+                    matriz_perimetro[x-1, y+1] = 1
                     x -= 1; y += 1
+
                 else:
                     print("Termine")
 
                 n += 1
             
-            print(matriz_perimetro)
-
             #matriz_horizontal = matriz_perimetro.copy()
             #matriz_vertical = matriz_perimetro.copy()
 
@@ -573,11 +630,16 @@ class Pixel:
                 #   if pos_1 != -1 and pos_2 != -1:
                 #       for k in range(pos_1 + 1, pos_2):
                 #           matriz_vertical[k, j] = 1 
+          
+            #for i in range(self.fila):
+                #   for j in range(self.columna):
+                        #if matriz_horizontal[i,j] == matriz_vertical[i,j]:
+                            #matriz_rellena[i,j]=matriz_horizontal [i,j]
+                        #else:
+                            #matriz_rellena[i,j] = 0
 
-            #matriz_rellena = np.zeros((self.fila, self.columna))
-            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+            matriz_rellena = self.rellenar_figura(matriz_perimetro, filas, columnas)
 
-            print(matriz_rellena)
 
             img_bw = (matriz_rellena * 255).astype(np.uint8)
             imagen_pil = Image.fromarray(img_bw, mode='L')
@@ -586,7 +648,6 @@ class Pixel:
 
             nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
 
-            # 6. Actualizar el label
             label.config(image=nueva_img_tk)
             label.image = nueva_img_tk
 
@@ -605,23 +666,33 @@ class Pixel:
             dir_actual = 0 
 
             for i in range(len(cadena)):
-   
                 dir_actual = (dir_actual + cadena[i]) % 8
                 
-                if dir_actual == 0:   y += 1            
-                elif dir_actual == 1: x += 1; y += 1      
-                elif dir_actual == 2: x += 1            
-                elif dir_actual == 3: x += 1; y -= 1      
-                elif dir_actual == 4: y -= 1             
-                elif dir_actual == 5: x -= 1; y -= 1     
-                elif dir_actual == 6: x -= 1             
-                elif dir_actual == 7: x -= 1; y += 1      
-                
+                if dir_actual == 0:
+                    y += 1
+                elif dir_actual == 1:
+                    matriz_perimetro[x, y+1] = 1    # intermedio
+                    x += 1; y += 1
+                elif dir_actual == 2:
+                    x += 1
+                elif dir_actual == 3:
+                    matriz_perimetro[x, y-1] = 1    # intermedio
+                    x += 1; y -= 1
+                elif dir_actual == 4:
+                    y -= 1
+                elif dir_actual == 5:
+                    matriz_perimetro[x, y-1] = 1    # intermedio
+                    x -= 1; y -= 1
+                elif dir_actual == 6:
+                    x -= 1
+                elif dir_actual == 7:
+                    matriz_perimetro[x, y+1] = 1    # intermedio
+                    x -= 1; y += 1
+
                 if 0 <= x < filas and 0 <= y < columnas:
                     matriz_perimetro[x, y] = 1
 
-
-            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+            matriz_rellena = self.rellenar_figura(matriz_perimetro, filas, columnas)
 
             img_bw = (matriz_rellena * 255).astype(np.uint8)
             imagen_pil = Image.fromarray(img_bw, mode='L')
@@ -650,7 +721,6 @@ class Pixel:
             for giro in cadena:
                 print(giro)
 
-
                 if giro == 0:
                     pass  
                 elif giro == 1: 
@@ -672,7 +742,7 @@ class Pixel:
                 print(matriz_perimetro)
                 n=n+1
 
-            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
+            matriz_rellena = self.rellenar_figura(matriz_perimetro, filas, columnas)
             
             matriz_og = self.recuperar_tamaño_original(matriz_rellena)
 
@@ -683,6 +753,7 @@ class Pixel:
             nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
             label.config(image=nueva_img_tk)
             label.image = nueva_img_tk
+
         elif tipo == "3OT":
 
 
@@ -753,13 +824,14 @@ class Pixel:
                     print("Termine")
                 n += 1
 
-            print(matriz_perimetro)
+            matriz_rellena = self.rellenar_figura(matriz_perimetro, filas, columnas)
 
-            matriz_rellena = binary_fill_holes(matriz_perimetro).astype(int)
             matriz_og = self.recuperar_tamaño_original(matriz_rellena)
+
             img_bw = (matriz_og * 255).astype(np.uint8)
             imagen_pil = Image.fromarray(img_bw, mode='L')
             imagen_pil.thumbnail((350, 350), Image.Resampling.LANCZOS)
+
             nueva_img_tk = ImageTk.PhotoImage(imagen_pil)
             label.config(image=nueva_img_tk)
             label.image = nueva_img_tk
@@ -796,192 +868,222 @@ class Pixel:
         for i in range(self.fila):
             for j in range(self.columna):
                 if self.matriz_binaria[i, j] == 1:
-                    self.x_inicio=i
-                    self.y_inicio=j
+                    self.x_inicio = i
+                    self.y_inicio = j
                     encontrado = True
-
-                    break  
+                    break
             if encontrado:
-                break  
+                break
 
         self.representar_pixeles()
 
-        fila = self.matriz_rep_pixeles.shape[0]
+        fila   = self.matriz_rep_pixeles.shape[0]
         columna = self.matriz_rep_pixeles.shape[1]
 
-        self.matriz_rep_pixeles=self.vecindad_N8_perimetro(self.matriz_rep_pixeles)
+        self.matriz_rep_pixeles = self.vecindad_N8_perimetro(self.matriz_rep_pixeles)
 
         print(self.matriz_rep_pixeles)
 
         codigo = []
-        x = 0
-        y = 0
-        
+        x, y   = 0, 0
+
         encontrado = False
         for i in range(fila):
             for j in range(columna):
                 if self.matriz_rep_pixeles[i, j] == 1:
-                    x = i 
-                    y = j
+                    x, y = i, j
                     encontrado = True
-                    break  
+                    break
             if encontrado:
-                break  
-        inicio_x = x
-        inicio_y = y
+                break
 
-        pos_recorridas = []
+        inicio_x, inicio_y = x, y
+
+        pos_recorridas_set  = set()
+        pos_recorridas_list = []
+
+        pos_recorridas_set.add((x, y))
+        pos_recorridas_list.append((x, y))
 
         n = 0
-        pos_recorridas.append((x, y))
-        while (n < fila*columna):
-            
-            if self.matriz_rep_pixeles[x, y+2]==1 and self.matriz_rep_pixeles[x, y+1]==1 and ((x, y+2) not in pos_recorridas or (x, y+2) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N8(x, y+2, self.matriz_rep_pixeles) :
+        while n < fila * columna:
+
+            if (self.matriz_rep_pixeles[x, y+2] == 1 and
+                self.matriz_rep_pixeles[x, y+1] == 1 and
+                ((x, y+2) not in pos_recorridas_set or (x, y+2) == (inicio_x, inicio_y)) and
+                self.verificar_vecidnad_N8(x, y+2, self.matriz_rep_pixeles)):
                 codigo.append(0)
                 y += 2
-                pos_recorridas.append((x, y))
-            elif self.matriz_rep_pixeles[x+2, y] == 1 and self.matriz_rep_pixeles[x+1, y]==1  and ((x+2, y) not in pos_recorridas or (x+2, y) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N8(x+2, y, self.matriz_rep_pixeles):
-                codigo.append(1) 
+                pos_recorridas_set.add((x, y))
+                pos_recorridas_list.append((x, y))
+
+            elif (self.matriz_rep_pixeles[x+2, y] == 1 and
+                self.matriz_rep_pixeles[x+1, y] == 1 and
+                ((x+2, y) not in pos_recorridas_set or (x+2, y) == (inicio_x, inicio_y)) and
+                self.verificar_vecidnad_N8(x+2, y, self.matriz_rep_pixeles)):
+                codigo.append(1)
                 x += 2
-                pos_recorridas.append((x, y))
-            elif self.matriz_rep_pixeles[x, y-2] == 1 and self.matriz_rep_pixeles[x, y-1]==1  and ((x, y-2) not in pos_recorridas or (x, y-2) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N8(x, y-2, self.matriz_rep_pixeles):
-                codigo.append(2) 
+                pos_recorridas_set.add((x, y))
+                pos_recorridas_list.append((x, y))
+
+            elif (self.matriz_rep_pixeles[x, y-2] == 1 and
+                self.matriz_rep_pixeles[x, y-1] == 1 and
+                ((x, y-2) not in pos_recorridas_set or (x, y-2) == (inicio_x, inicio_y)) and
+                self.verificar_vecidnad_N8(x, y-2, self.matriz_rep_pixeles)):
+                codigo.append(2)
                 y -= 2
-                pos_recorridas.append((x, y))
-            elif self.matriz_rep_pixeles[x-2, y] == 1 and self.matriz_rep_pixeles[x-1, y]==1 and ((x-2, y) not in pos_recorridas or (x-2, y) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N8(x-2, y, self.matriz_rep_pixeles):
+                pos_recorridas_set.add((x, y))
+                pos_recorridas_list.append((x, y))
+
+            elif (self.matriz_rep_pixeles[x-2, y] == 1 and
+                self.matriz_rep_pixeles[x-1, y] == 1 and
+                ((x-2, y) not in pos_recorridas_set or (x-2, y) == (inicio_x, inicio_y)) and
+                self.verificar_vecidnad_N8(x-2, y, self.matriz_rep_pixeles)):
                 codigo.append(3)
                 x -= 2
-                pos_recorridas.append((x, y))
-            else:
-                if len(pos_recorridas) > 1:
+                pos_recorridas_set.add((x, y))
+                pos_recorridas_list.append((x, y))
 
-                    pos_anterior = pos_recorridas[-2]
-                    ant_x, ant_y = pos_anterior
-                    
-                    if ant_y > y: 
-                        codigo.append(0)
-                    elif ant_x > x: 
-                        codigo.append(1)
-                    elif ant_y < y:
-                        codigo.append(2)
-                    elif ant_x < x:
-                        codigo.append(3)
-                    
-                
+            else:
+                if len(pos_recorridas_list) > 1:
+                    # Eliminar la posición actual (callejón sin salida)
+                    pos_recorridas_list.pop()
+                    pos_recorridas_set.discard((x, y))
+
+                    # Retroceder a la anterior
+                    ant_x, ant_y = pos_recorridas_list[-1]
+
+                    if ant_y < y:   codigo.append(0)
+                    elif ant_x < x: codigo.append(1)
+                    elif ant_y > y: codigo.append(2)
+                    elif ant_x > x: codigo.append(3)
+
                     x, y = ant_x, ant_y
-                    
-                    
                 else:
                     break
-            
+
             if x == inicio_x and y == inicio_y:
                 break
-            
+
             n += 1
 
-  
         print(f"Código F4 Final: {codigo} (Longitud: {len(codigo)})")
-        n=0
         self.codigo_F4 = codigo
-        
+
         entry.delete("0", "end")
         entry.insert("end", "F4 - ")
         entry.insert("end", str(codigo))
 
         return self.codigo_F4
     
-    def f4_2(self):
+    def f4_2(self, entry):
         if len(self.matriz_binaria) == 0:
             messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
             return
-                
+
         encontrado = False
         for i in range(self.fila):
             for j in range(self.columna):
                 if self.matriz_binaria[i, j] == 1:
-                    self.x_inicio=i
-                    self.y_inicio=j
+                    self.x_inicio = i
+                    self.y_inicio = j
                     encontrado = True
-
-                    break  
+                    break
             if encontrado:
-                break  
+                break
 
         self.representar_pixeles()
 
-        fila = self.matriz_rep_pixeles.shape[0]
+        fila   = self.matriz_rep_pixeles.shape[0]
         columna = self.matriz_rep_pixeles.shape[1]
 
-        self.matriz_rep_pixeles=self.vecindad_N8_perimetro(self.matriz_rep_pixeles)
+        self.matriz_rep_pixeles = self.vecindad_N8_perimetro(self.matriz_rep_pixeles)
 
         print(self.matriz_rep_pixeles)
 
         codigo = []
-        x = 0
-        y = 0
-        
+        x, y   = 0, 0
+
         encontrado = False
         for i in range(fila):
             for j in range(columna):
                 if self.matriz_rep_pixeles[i, j] == 1:
-                    x = i 
-                    y = j
+                    x, y = i, j
                     encontrado = True
-                    break  
+                    break
             if encontrado:
-                break  
-        inicio_x = x
-        inicio_y = y
+                break
 
-        pos_recorridas = []
+        inicio_x, inicio_y = x, y
+
+        pos_recorridas_set  = set()
+        pos_recorridas_list = []
+
+        pos_recorridas_set.add((x, y))
+        pos_recorridas_list.append((x, y))
 
         n = 0
-        pos_recorridas.append((x, y))
-        while (n < fila*columna):
-            
-            if self.matriz_rep_pixeles[x, y+2]==1 and self.matriz_rep_pixeles[x, y+1]==1 and ((x, y+2) not in pos_recorridas or (x, y+2) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N8(x, y+2, self.matriz_rep_pixeles) :
+        while n < fila * columna:
+
+            if (self.matriz_rep_pixeles[x, y+2] == 1 and
+                self.matriz_rep_pixeles[x, y+1] == 1 and
+                ((x, y+2) not in pos_recorridas_set or (x, y+2) == (inicio_x, inicio_y)) and
+                self.verificar_vecidnad_N8(x, y+2, self.matriz_rep_pixeles)):
                 codigo.append(0)
                 y += 2
-                pos_recorridas.append((x, y))
-            elif self.matriz_rep_pixeles[x+2, y] == 1 and self.matriz_rep_pixeles[x+1, y]==1  and ((x+2, y) not in pos_recorridas or (x+2, y) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N8(x+2, y, self.matriz_rep_pixeles):
-                codigo.append(1) 
+                pos_recorridas_set.add((x, y))
+                pos_recorridas_list.append((x, y))
+
+            elif (self.matriz_rep_pixeles[x+2, y] == 1 and
+                self.matriz_rep_pixeles[x+1, y] == 1 and
+                ((x+2, y) not in pos_recorridas_set or (x+2, y) == (inicio_x, inicio_y)) and
+                self.verificar_vecidnad_N8(x+2, y, self.matriz_rep_pixeles)):
+                codigo.append(1)
                 x += 2
-                pos_recorridas.append((x, y))
-            elif self.matriz_rep_pixeles[x, y-2] == 1 and self.matriz_rep_pixeles[x, y-1]==1  and ((x, y-2) not in pos_recorridas or (x, y-2) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N8(x, y-2, self.matriz_rep_pixeles):
-                codigo.append(2) 
+                pos_recorridas_set.add((x, y))
+                pos_recorridas_list.append((x, y))
+
+            elif (self.matriz_rep_pixeles[x, y-2] == 1 and
+                self.matriz_rep_pixeles[x, y-1] == 1 and
+                ((x, y-2) not in pos_recorridas_set or (x, y-2) == (inicio_x, inicio_y)) and
+                self.verificar_vecidnad_N8(x, y-2, self.matriz_rep_pixeles)):
+                codigo.append(2)
                 y -= 2
-                pos_recorridas.append((x, y))
-            elif self.matriz_rep_pixeles[x-2, y] == 1 and self.matriz_rep_pixeles[x-1, y]==1 and ((x-2, y) not in pos_recorridas or (x-2, y) == (inicio_x, inicio_y)) and self.verificar_vecidnad_N8(x-2, y, self.matriz_rep_pixeles):
+                pos_recorridas_set.add((x, y))
+                pos_recorridas_list.append((x, y))
+
+            elif (self.matriz_rep_pixeles[x-2, y] == 1 and
+                self.matriz_rep_pixeles[x-1, y] == 1 and
+                ((x-2, y) not in pos_recorridas_set or (x-2, y) == (inicio_x, inicio_y)) and
+                self.verificar_vecidnad_N8(x-2, y, self.matriz_rep_pixeles)):
                 codigo.append(3)
                 x -= 2
-                pos_recorridas.append((x, y))
-            else:
-                if len(pos_recorridas) > 1:
+                pos_recorridas_set.add((x, y))
+                pos_recorridas_list.append((x, y))
 
-                    pos_anterior = pos_recorridas[-2]
-                    ant_x, ant_y = pos_anterior
-                    
-                    if ant_y > y: 
-                        codigo.append(0)
-                    elif ant_x > x: 
-                        codigo.append(1)
-                    elif ant_y < y:
-                        codigo.append(2)
-                    elif ant_x < x:
-                        codigo.append(3)
-                    
-                
+            else:
+                if len(pos_recorridas_list) > 1:
+                    # Eliminar la posición actual (callejón sin salida)
+                    pos_recorridas_list.pop()
+                    pos_recorridas_set.discard((x, y))
+
+                    # Retroceder a la anterior
+                    ant_x, ant_y = pos_recorridas_list[-1]
+
+                    if ant_y < y:   codigo.append(0)
+                    elif ant_x < x: codigo.append(1)
+                    elif ant_y > y: codigo.append(2)
+                    elif ant_x > x: codigo.append(3)
+
                     x, y = ant_x, ant_y
-                    
-                    
                 else:
                     break
-            
+
             if x == inicio_x and y == inicio_y:
                 break
-            
+
             n += 1
-        n=0
+
         self.codigo_F4 = codigo
         self.codigo_F4_2 = codigo
     
@@ -1342,6 +1444,7 @@ class Pixel:
         label.config(text=f"{longitud_promedio:.4f}")
      
     def tabla(self, codigo):
+        
         frecuencia = Counter(codigo)
         N = len(codigo)
         datos = pd.DataFrame({
@@ -1457,13 +1560,22 @@ class Pixel:
 
             label_perimetro.config(text=f"{perimetro}")
             label_area.config(text=f"{area}")
-            label_perimetro_c.config(text=f"{perimetro_contacto:.4f}")
-            label_euler.config(text=f"{caracteristica_euler:.4f}")
+            label_perimetro_c.config(text=f"{int(perimetro_contacto)}")
+            label_euler.config(text=f"{int(caracteristica_euler)}")
             label_com_discreta.config(text=f"{com_discreta:.4f}")
         else:
             messagebox.showwarning("Aviso", "No se ha cargado una imagen.")
 
     def entropia_shannon(self,entry,label_h):
+        
+        if entry.get() == "":
+            messagebox.showwarning("Aviso", "Código de cadena vacío.")
+            return
+
+        if " - " not in entry.get():
+            messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
+            return
+
         texto_cadena=entry.get().split(" - ")[1]
         codigo=[int(i.strip()) for i in texto_cadena.strip("[]").split(",") if i.strip()]
 
@@ -1474,6 +1586,15 @@ class Pixel:
         return entropia
 
     def comp_aritmetica(self, entry, label_a):
+        
+        if entry.get() == "":
+            messagebox.showwarning("Aviso", "Código de cadena vacío.")
+            return
+
+        if " - " not in entry.get():
+            messagebox.showwarning("Aviso", "Formato inválido. Debe ser: TIPO - [codigo]")
+            return
+
         texto_cadena=entry.get().split(" - ")[1]
         codigo=[int(i.strip()) for i in texto_cadena.strip("[]").split(",") if i.strip()]
         

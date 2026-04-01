@@ -1,42 +1,47 @@
-
-import tkinter as tk
 import os
+import io
+import base64
+import tkinter as tk
 from tkinter import ttk
-from tkinter import font
 from PIL import Image, ImageTk
 from codigos_cadenas import Pixel
 
+IMAGEN_BLANCO_B64 = "/9j/4AAQSkZJRgABAQEAYABgAAD/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAEAAAAAAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAFeAV4DASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/2Q=="
+
 ventana = tk.Tk()
 ventana.title("Code Chain")
-mainframe = tk.Frame(ventana)# se crea el frame
-mainframe.pack() #se empaqueta para que se pueda mostrar, tiene mas parametros para personalziar
-mainframe.config(bg="#38403D") #color del frame color gris
-mainframe.config(width="1800", height="795")#alto y ancho de Frame
-
+mainframe = tk.Frame(ventana)
+mainframe.pack(fill="both", expand=True)
+mainframe.config(bg="#38403D")
 ventana.state('zoomed')
+ventana.resizable(False, False)
+ventana.update()
 
-fuente_arial=("Arial", 10)
+fuente_arial = ("Arial", 10)
 
 directorio_actual = os.path.dirname(__file__)
 
-ruta_relativa = os.path.join(directorio_actual, "imagen_blanco.jpg")
+def cargar_imagen_b64(b64_string, ancho, alto):
+    data = base64.b64decode(b64_string)
+    img = Image.open(io.BytesIO(data)).resize((ancho, alto), Image.Resampling.LANCZOS)
+    return ImageTk.PhotoImage(img)
 
-img_open = Image.open(ruta_relativa)
-image = ImageTk.PhotoImage(img_open)
+ancho = int(ventana.winfo_width()  * 0.25)
+alto  = int(ventana.winfo_height() * 0.45)
+
+image  = cargar_imagen_b64(IMAGEN_BLANCO_B64, ancho, alto)
+image2 = cargar_imagen_b64(IMAGEN_BLANCO_B64, ancho, alto)
 
 label = ttk.Label(mainframe, image=image)
 label.place(relx=0.02, rely=0.02)
 
-img_open2 = Image.open(ruta_relativa)
-image2 = ImageTk.PhotoImage(img_open2)
-
 label_2 = ttk.Label(mainframe, image=image2)
-label_2.place(relx=0.02,rely=0.53)
+label_2.place(relx=0.02, rely=0.53)
 
 pixeles = Pixel()
 
-boton_abrir_imagen= tk.Button(mainframe,width=10,height=1, text="Abrir imagen", command=lambda: pixeles.cargar_imagen(label), font=fuente_arial)
-boton_abrir_imagen.place(relx=0.1,rely=0.48)
+boton_abrir_imagen = tk.Button(mainframe, width=10, height=1, text="Abrir imagen", command=lambda: pixeles.cargar_imagen(label), font=fuente_arial)
+boton_abrir_imagen.place(relx=0.1, rely=0.48)
 
 
 #=============================== Seccion 1 =========================================================
@@ -325,7 +330,10 @@ etiqueta_entry_codigo.insert(0, "")
 exportar = tk.Button(mainframe,width=7,height=2, text="Exportar",command=lambda: pixeles.formato_codificado(etiqueta_entry_codigo), font=fuente_arial)
 exportar.place(relx=0.30, rely=0.62)
 
-try:
-    ventana.mainloop()
-except KeyboardInterrupt:
-    pass
+
+while True:
+    try:
+        ventana.mainloop()
+        break
+    except KeyboardInterrupt:
+        pass
